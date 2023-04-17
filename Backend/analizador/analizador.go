@@ -163,19 +163,21 @@ func analizarFdisk(parametros string) {
 				fmt.Printf("¡Error! El valor de fit debe ser un único carácter: %v\n", valor)
 				return
 			}
-			binary.LittleEndian.PutUint32(particion.Fit[:], uint32(valor[0]))
+			particion.Fit = [1]byte{valor[0]}
 		case "type":
 			if len(valor) != 1 {
 				fmt.Printf("¡Error! El valor de type debe ser un único carácter: %v\n", valor)
 				return
 			}
-			binary.LittleEndian.PutUint32(particion.Type[:], uint32(valor[0]))
+			particion.Type = [1]byte{valor[0]}
 		case "name":
 			if len(valor) > 16 {
 				fmt.Printf("¡Error! El valor de name no puede ser mayor a 16 caracteres: %v\n", valor)
 				return
 			}
-			binary.LittleEndian.PutUint32(particion.Name[:], uint32(valor[0]))
+			for i := 0; i < len(valor); i++ {
+				particion.Name[i] = valor[i]
+			}
 
 		default:
 			fmt.Printf("¡Error! fdisk solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
@@ -193,6 +195,16 @@ func analizarFdisk(parametros string) {
 	if estaVacia(particion.Size) || particion.Path == "" || estaVaciaName(particion.Name) {
 		fmt.Println("¡Error! Parece que alguien olvidó poner los parámetros en 'fdisk'")
 		return
+	}
+
+	//Si el fit esta vacio, lo ponemos por defecto
+	if particion.Fit[0] == 0 {
+		particion.Fit = [1]byte{'W'}
+	}
+
+	//Si el type esta vacio, lo ponemos por defecto
+	if particion.Type[0] == 0 {
+		particion.Type = [1]byte{'P'}
 	}
 
 	//Creamos la particion
@@ -213,7 +225,7 @@ func Analizar(comando string) {
 		analizarRmdisk(parametros)
 	} else if token == "fdisk" {
 		fmt.Println("Creando partición...")
-
+		analizarFdisk(parametros)
 	} else if token == "mount" {
 		fmt.Println("Montando partición...")
 	} else {

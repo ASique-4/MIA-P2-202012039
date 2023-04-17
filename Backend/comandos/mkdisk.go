@@ -30,16 +30,11 @@ func CrearDiscos(disco Mkdisk) {
 	nombre := disco.Path[strings.LastIndex(disco.Path, "/")+1:]
 	// Verificamos si el path existe y si no lo creamos
 	pathSinNombre := strings.TrimSuffix(disco.Path, "/"+disco.Path[strings.LastIndex(disco.Path, "/")+1:]) + "/"
-	if _, err := os.Stat(pathSinNombre); os.IsNotExist(err) {
-		comando := "mkdir " + pathSinNombre
-		if err := os.MkdirAll(comando, 0777); err != nil {
-			fmt.Println("¡Error! Fallé al crear el directorio. Lo siento, parece que no soy tan hábil como pensaba.")
-			return
-		}
-		disco.Path = pathSinNombre + "/" + nombre
-	} else {
-		disco.Path = pathSinNombre + "/" + nombre
+	if err := os.MkdirAll(pathSinNombre, 0777); err != nil {
+		fmt.Println("¡Error! Fallé al crear el directorio. Lo siento, parece que no soy tan hábil como pensaba.")
+		return
 	}
+	disco.Path = pathSinNombre + "/" + nombre
 
 	//Creamos el archivo
 	archivo, err := os.Create(disco.Path)

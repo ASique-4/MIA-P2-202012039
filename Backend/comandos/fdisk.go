@@ -89,7 +89,8 @@ func buscarParticionLibre(mbr *estructuras.MBR, size int) *estructuras.Particion
 	particiones := [4]*estructuras.Particion{&mbr.Mbr_partition_1, &mbr.Mbr_partition_2, &mbr.Mbr_partition_3, &mbr.Mbr_partition_4}
 
 	for _, particion := range particiones {
-		if particion.Part_name[0] == 0 && bytesToInt(particion.Part_start) == size {
+
+		if particion.Part_name == [16]byte{} && bytesToInt(particion.Part_start) == size {
 			particionLibre = particion
 			break
 		}
@@ -97,11 +98,11 @@ func buscarParticionLibre(mbr *estructuras.MBR, size int) *estructuras.Particion
 
 	if particionLibre == nil {
 		for i := 3; i >= 0; i-- {
-			if bytesToInt(particiones[i].Part_size) == -1 && bytesToInt(particiones[i].Part_start) == -1 && i == 0 {
+			if particiones[i].Part_size == [4]byte{} && (particiones[i].Part_start) == [4]byte{} && i == 0 {
 				particionLibre = particiones[i]
 				break
 			}
-			if bytesToInt(particiones[i].Part_size) == -1 && bytesToInt(particiones[i].Part_start) == -1 &&
+			if particiones[i].Part_size == [4]byte{} && (particiones[i].Part_start) == [4]byte{} &&
 				(bytesToInt(particiones[i-1].Part_size)+bytesToInt(particiones[i-1].Part_start)) == (bytesToInt(mbr.Mbr_tamanio)-size) {
 				particionLibre = particiones[i]
 				break
@@ -200,8 +201,40 @@ func buscarIndexPeorAjuste(espaciosLibres []EspacioLibre, particion estructuras.
 
 }
 
+// la función devuelve la partición extendida de un disco
+func getParticionExtendida(mbr *estructuras.MBR) *estructuras.Particion {
+
+	//Particiones del disco
+	particiones := [4]estructuras.Particion{mbr.Mbr_partition_1, mbr.Mbr_partition_2, mbr.Mbr_partition_3, mbr.Mbr_partition_4}
+
+	for _, particion := range particiones {
+		if particion.Part_type[0] == 'E' || particion.Part_type[0] == 'e' {
+			return &particion
+		}
+	}
+	return nil
+}
+
+// La función escribe el EBR en el disco
+func escribirEBR(ebr estructuras.EBR, particionExtendida estructuras.Particion, path string) {
+	// Abrimos el archivo
+	if archivo, err := os.OpenFile(path, os.O_RDWR, 0666); err == nil {
+		// Nos movemos a la posición del EBR
+		archivo.Seek(int64(bytesToInt(ebr.Part_start)), 0)
+
+		// Escribimos el EBR
+		var binario bytes.Buffer
+		binary.Write(&binario, binary.BigEndian, ebr)
+		archivo.Write(binario.Bytes())
+
+		// Cerramos el archivo
+		archivo.Close()
+	}
+
+}
+
 // La función crea una partición en un espacio libre determinado.
-func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espaciosLibres []EspacioLibre, best_index int, tamanio int64) {
+func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espaciosLibres []EspacioLibre, best_index int, tamanio int64, path string) {
 
 	if particion.Part_type[0] == 'P' || particion.Part_type[0] == 'p' {
 		if espaciosLibres[best_index].partcion != nil {
@@ -229,10 +262,110 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 			particionLibre.Part_name = particion.Part_name
 			binary.LittleEndian.PutUint32(particionLibre.Part_start[:], uint32(espaciosLibres[best_index].inicio))
 		}
+	} else if particion.Part_type[0] == 'E' || particion.Part_type[0] == 'e' {
+
+		// Verificamos si existe una partición extendida
+		if getParticionExtendida(mbr) != nil {
+			fmt.Println("Ya existe una partición extendida.")
+			return
+		}
+
+		// Buscamos la partición libre
+		particionLibre := buscarParticionLibre(mbr, int(espaciosLibres[best_index].tamaño))
+
+		// Si la partición no es valida, retornamos
+		if particionLibre == nil {
+			fmt.Println("No se encontró una partición libre.")
+			return
+		}
+
+		// Creamos la partición
+		particionLibre.Part_status = particion.Part_status
+		particionLibre.Part_type = particion.Part_type
+		particionLibre.Part_fit = particion.Part_fit
+		particionLibre.Part_size = particion.Part_size
+		particionLibre.Part_name = particion.Part_name
+		binary.LittleEndian.PutUint32(particionLibre.Part_start[:], uint32(espaciosLibres[best_index].inicio))
+
+	} else if particion.Part_type[0] == 'L' || particion.Part_type[0] == 'l' {
+		// Buscamos la partición libre
+		particionExtendida := getParticionExtendida(mbr)
+
+		// Si la partición no es valida, retornamos
+		if particionExtendida == nil {
+			fmt.Println("No se encontró una partición extendida.")
+			return
+		}
+
+		// Abrimos el archivo
+		file, err := os.OpenFile(path, os.O_RDWR, 0666)
+		if err != nil {
+			fmt.Println("Error al abrir el archivo.")
+			return
+		}
+
+		defer file.Close()
+
+		// Leemos los EBR
+		inicio := bytesToInt(particionExtendida.Part_start)
+		tamaño := bytesToInt(particionExtendida.Part_size)
+		espacioOcupado := 0
+
+		// Variable para almacenar el EBR
+		var ebr estructuras.EBR
+
+		for espacioOcupado < tamaño {
+			// Nos movemos a la posición del EBR
+			file.Seek(int64(inicio), 0)
+
+			// Leemos el EBR
+			binary.Read(file, binary.BigEndian, &ebr)
+
+			// Verificamos si el EBR es válido
+			if ebr.Part_size == [4]byte{0, 0, 0, 0} || bytesToInt(ebr.Part_size) > tamaño || bytesToInt(ebr.Part_size) < 0 || (ebr.Part_status != [1]byte{'0'} && ebr.Part_status != [1]byte{'1'}) || (ebr.Part_fit != [1]byte{'B'} && ebr.Part_fit != [1]byte{'F'} && ebr.Part_fit != [1]byte{'W'}) || bytesToInt(ebr.Part_start) != inicio {
+
+				break
+			}
+
+			// Verificamos si hay espacio para la partición
+			inicio += bytesToInt(ebr.Part_size)
+			espacioOcupado += bytesToInt(ebr.Part_size)
+		}
+
+		// Verificamos si hay espacio para la partición
+		if espacioOcupado+int(tamanio) > tamaño {
+			fmt.Println("No hay espacio para la partición.")
+			return
+		}
+
+		// Actualizamos el next del EBR anterior
+		if inicio != bytesToInt(particionExtendida.Part_start) {
+			// Nos movemos a la posición del EBR
+			file.Seek(int64(inicio)-tamanio, 0)
+			binary.Read(file, binary.BigEndian, &ebr)
+			binary.LittleEndian.PutUint32(ebr.Part_next[:], uint32(inicio))
+			file.Seek(int64(inicio)-tamanio, 0)
+			binary.Write(file, binary.BigEndian, &ebr)
+		}
+
+		// Creamos el EBR
+		nuevoEBR := estructuras.EBR{
+			Part_status: [1]byte{'0'},
+			Part_fit:    [1]byte{'W'},
+			Part_size:   particion.Part_size,
+			Part_next:   [4]byte{0, 0, 0, 0},
+			Part_name:   particion.Part_name,
+		}
+		binary.LittleEndian.PutUint32(nuevoEBR.Part_start[:], uint32(inicio))
+
+		// Escribimos el EBR
+		file.Seek(int64(inicio), 0)
+		binary.Write(file, binary.BigEndian, &nuevoEBR)
+
 	}
 }
 
-func peorAjuste(mbr *estructuras.MBR, particion estructuras.Particion) {
+func peorAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path string) {
 	// Variable para almacenar el tamaño de la partición
 	var tamañoParticion int64 = int64(bytesToInt(particion.Part_size))
 
@@ -247,7 +380,7 @@ func peorAjuste(mbr *estructuras.MBR, particion estructuras.Particion) {
 		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
 	} else {
 		// Si el índice es válido, creamos la partición
-		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion)
+		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
 	}
 
 }
@@ -260,25 +393,99 @@ func mejorAjuste(mbr *estructuras.MBR, particion estructuras.Particion) {
 
 }
 
-func agregarParticionAlMBR(mbr *estructuras.MBR, particion estructuras.Particion) {
+func agregarParticionAlMBR(mbr *estructuras.MBR, particion estructuras.Particion, path string) {
 	if particion.Part_fit[0] == 'B' {
 		mejorAjuste(mbr, particion)
 	} else if particion.Part_fit[0] == 'F' {
 		primerAjuste(mbr, particion)
 	} else if particion.Part_fit[0] == 'W' {
-		peorAjuste(mbr, particion)
+		peorAjuste(mbr, particion, path)
 	}
+}
+
+func ImprimirMBR(mbr estructuras.MBR, path string) {
+	fmt.Println("MBR")
+	fmt.Printf("MBR_Tamaño: %d\n", mbr.Mbr_tamanio)
+	fmt.Printf("MBR_Fecha_creacion: %s\n", mbr.Mbr_fecha_creacion)
+	fmt.Printf("MBR_Disk_signature: %d\n", mbr.Mbr_disk_signature)
+	fmt.Println("Particiones:")
+
+	particiones := [4]estructuras.Particion{mbr.Mbr_partition_1, mbr.Mbr_partition_2, mbr.Mbr_partition_3, mbr.Mbr_partition_4}
+	fmt.Println("---------------------")
+	for i := 0; i < len(particiones); i++ {
+		if particiones[i].Part_size != [4]byte{0, 0, 0, 0} {
+			fmt.Printf("Particion %d%s", i+1, " - ")
+			fmt.Printf("Particion_Status: %s\n", particiones[i].Part_status)
+			fmt.Printf("Particion_Type: %s\n", particiones[i].Part_type)
+			fmt.Printf("Particion_Fit: %s\n", particiones[i].Part_fit)
+			fmt.Printf("Particion_Start: %d\n", bytesToInt(particiones[i].Part_start))
+			fmt.Printf("Particion_Size: %d\n", bytesToInt(particiones[i].Part_size))
+			fmt.Printf("Particion_Name: %s\n", particiones[i].Part_name)
+			fmt.Println("---------------------")
+			//Si la partición es extendida, imprimimos sus EBR
+			if particiones[i].Part_type[0] == 'E' {
+				//Abrimos el archivo
+				file, err := os.OpenFile(path, os.O_RDWR, 0666)
+				if err != nil {
+					fmt.Println(err)
+				}
+				defer file.Close()
+
+				//Nos movemos a la posición del EBR
+				file.Seek(int64(bytesToInt(particiones[i].Part_start)), 0)
+
+				// Leemos los EBR
+				inicio := bytesToInt(particiones[i].Part_start)
+				tamaño := bytesToInt(particiones[i].Part_size)
+				espacioOcupado := 0
+
+				// Variable para almacenar el EBR
+				var ebr estructuras.EBR
+
+				for espacioOcupado < tamaño {
+					// Nos movemos a la posición del EBR
+					file.Seek(int64(inicio), 0)
+
+					// Leemos el EBR
+					binary.Read(file, binary.BigEndian, &ebr)
+					fmt.Println("inicio: ", inicio)
+					fmt.Println("ebr.part_start: ", bytesToInt(ebr.Part_start))
+
+					// Verificamos si el EBR no es válido
+					if ebr.Part_size == [4]byte{0, 0, 0, 0} || bytesToInt(ebr.Part_size) > tamaño || bytesToInt(ebr.Part_size) < 0 || (ebr.Part_status != [1]byte{'0'} && ebr.Part_status != [1]byte{'1'}) || (ebr.Part_fit != [1]byte{'B'} && ebr.Part_fit != [1]byte{'F'} && ebr.Part_fit != [1]byte{'W'}) || ebr.Part_name == [16]byte{0} || bytesToInt(ebr.Part_start) != inicio {
+						break
+					}
+
+					// Imprimimos el EBR
+					fmt.Println("EBR")
+					fmt.Printf("EBR_Status: %s\n", ebr.Part_status)
+					fmt.Printf("EBR_Fit: %s\n", ebr.Part_fit)
+					fmt.Printf("EBR_Start: %d\n", bytesToInt(ebr.Part_start))
+					fmt.Printf("EBR_Size: %d\n", bytesToInt(ebr.Part_size))
+					fmt.Printf("EBR_Name: %s\n", ebr.Part_name)
+					fmt.Printf("EBR_Next: %d\n", bytesToInt(ebr.Part_next))
+					fmt.Println("---------------------")
+
+					// Obtenemos el siguiente EBR
+					inicio = bytesToInt(ebr.Part_next)
+					espacioOcupado += bytesToInt(ebr.Part_size)
+				}
+
+			}
+		}
+
+	}
+
 }
 
 // Función para crear una partición
 func CrearParticion(particion Fdisk) {
-	fmt.Println("Creando partición...")
 	fmt.Println("Size:", particion.Size)
 	fmt.Println("Path:", particion.Path)
 	fmt.Println("Unit:", particion.Unit)
 	fmt.Println("Type:", particion.Type)
 	fmt.Println("Fit:", particion.Fit)
-	fmt.Println("Name:", particion.Name)
+	fmt.Println("Name:", string(particion.Name[:]))
 
 	//Si el path tiene comillas, las quitamos
 	if particion.Path[0] == '"' {
@@ -306,7 +513,7 @@ func CrearParticion(particion Fdisk) {
 
 	//Creamos la partición
 	particionNueva := estructuras.Particion{
-		Part_status: [1]byte{0},
+		Part_status: [1]byte{'0'},
 		Part_type:   particion.Type,
 		Part_fit:    particion.Fit,
 		Part_start:  [4]byte{},
@@ -329,6 +536,39 @@ func CrearParticion(particion Fdisk) {
 		return
 	}
 
-	agregarParticionAlMBR(&mbr, particionNueva)
+	agregarParticionAlMBR(&mbr, particionNueva, particion.Path)
+
+	//Ordenamos las particiones
+	mbr.OrdenarParticiones()
+
+	//Escribimos el MBR
+	file.Seek(0, 0)
+	err = binary.Write(file, binary.LittleEndian, &mbr)
+	if err != nil {
+		fmt.Println("¡Error! No se pudo escribir el archivo. Lo siento, parece que no soy tan hábil como pensaba.")
+		return
+	}
+
+	//Cerramos el archivo
+	file.Close()
+
+	fmt.Println("¡Partición creada con éxito!")
+
+	//Lee el MBR
+	file, err = os.OpenFile(particion.Path, os.O_RDWR, 0666)
+	if err != nil {
+		fmt.Println("¡Error! No se pudo abrir el archivo. Lo siento, parece que no soy tan hábil como pensaba.")
+		return
+	}
+
+	//Leemos el MBR
+	err = binary.Read(file, binary.LittleEndian, &mbr)
+	if err != nil {
+		fmt.Println("¡Error! No se pudo leer el archivo. Lo siento, parece que no soy tan hábil como pensaba.")
+		return
+	}
+
+	//Imprimimos el MBR
+	ImprimirMBR(mbr, particion.Path)
 
 }

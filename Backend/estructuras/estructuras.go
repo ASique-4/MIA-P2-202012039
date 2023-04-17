@@ -28,7 +28,7 @@ func (mbr *MBR) OrdenarParticiones() {
 		for j := 0; j < len(particiones)-1; j++ {
 			start1 := binary.LittleEndian.Uint32(particiones[j].Part_start[:])
 			start2 := binary.LittleEndian.Uint32(particiones[j+1].Part_start[:])
-			if start1 > start2 {
+			if start1 > start2 && start2 != 0 {
 				particiones[j], particiones[j+1] = particiones[j+1], particiones[j]
 			}
 		}
@@ -47,5 +47,15 @@ type Particion struct {
 	Part_fit    [1]byte
 	Part_start  [4]byte
 	Part_size   [4]byte
+	Part_name   [16]byte
+}
+
+// Estrucutra para el EBR
+type EBR struct {
+	Part_status [1]byte
+	Part_fit    [1]byte
+	Part_start  [4]byte
+	Part_size   [4]byte
+	Part_next   [4]byte
 	Part_name   [16]byte
 }
