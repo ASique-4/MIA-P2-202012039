@@ -385,19 +385,111 @@ func peorAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path stri
 
 }
 
-func primerAjuste(mbr *estructuras.MBR, particion estructuras.Particion) {
+func primerAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path string) {
+	// Variable para almacenar el tamaño de la partición
+	var tamañoParticion int64 = int64(bytesToInt(particion.Part_size))
+
+	// Creamos una lista de espacios libres
+	var espaciosLibres []EspacioLibre = calcularEspaciosLibres(mbr)
+
+	// Buscamos el índice del primer ajuste
+	var index int = buscarIndexPrimerAjuste(espaciosLibres, particion)
+
+	// Si el índice es -1, no se encontró un espacio libre que cumpla con la condición
+	if index == -1 {
+		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
+	} else {
+		// Si el índice es válido, creamos la partición
+		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
+	}
 
 }
 
-func mejorAjuste(mbr *estructuras.MBR, particion estructuras.Particion) {
+func mejorAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path string) {
+	// Variable para almacenar el tamaño de la partición
+	var tamañoParticion int64 = int64(bytesToInt(particion.Part_size))
 
+	// Creamos una lista de espacios libres
+	var espaciosLibres []EspacioLibre = calcularEspaciosLibres(mbr)
+
+	// Buscamos el índice del mejor ajuste
+	var index int = buscarIndexMejorAjuste(espaciosLibres, particion)
+
+	// Si el índice es -1, no se encontró un espacio libre que cumpla con la condición
+	if index == -1 {
+		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
+	} else {
+		// Si el índice es válido, creamos la partición
+		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
+	}
+
+}
+
+func existeNombreParticionLogica(particion estructuras.Particion, nombre [16]byte, path string) bool {
+	// Abrimos el archivo
+	file, err := os.OpenFile(path, os.O_RDWR, 0666)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// Recorremos las particiones
+	var ebr estructuras.EBR
+	var inicio int = bytesToInt(particion.Part_start)
+	var tamaño int = bytesToInt(particion.Part_size)
+	var espacioOcupado int = 0
+
+	for espacioOcupado < tamaño {
+		// Nos movemos a la posición del EBR
+		file.Seek(int64(inicio), 0)
+		binary.Read(file, binary.BigEndian, &ebr)
+
+		// Verificamos si el nombre es igual
+		if ebr.Part_name == nombre {
+			return true
+		}
+
+		// Verificamos si el next es -1
+		if ebr.Part_size == [4]byte{0, 0, 0, 0} || bytesToInt(ebr.Part_size) > tamaño || bytesToInt(ebr.Part_size) < 0 || (ebr.Part_status != [1]byte{'0'} && ebr.Part_status != [1]byte{'1'}) || (ebr.Part_fit != [1]byte{'B'} && ebr.Part_fit != [1]byte{'F'} && ebr.Part_fit != [1]byte{'W'}) || ebr.Part_name == [16]byte{0} || bytesToInt(ebr.Part_start) != inicio {
+			break
+		}
+
+		// Actualizamos el inicio
+		inicio = bytesToInt(ebr.Part_next)
+		espacioOcupado += bytesToInt(ebr.Part_size)
+	}
+
+	return false
+
+}
+
+func existeNombreParticion(mbr estructuras.MBR, nombre [16]byte, path string) bool {
+	particiones := [4]estructuras.Particion{mbr.Mbr_partition_1, mbr.Mbr_partition_2, mbr.Mbr_partition_3, mbr.Mbr_partition_4}
+	for i := 0; i < len(particiones); i++ {
+		if particiones[i].Part_name == nombre {
+			return true
+		}
+		// Verificamos si la partición es extendida
+		if particiones[i].Part_type[0] == 'E' || particiones[i].Part_type[0] == 'e' {
+			// Buscamos si existe una partición lógica con el mismo nombre
+			if existeNombreParticionLogica(particiones[i], nombre, path) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func agregarParticionAlMBR(mbr *estructuras.MBR, particion estructuras.Particion, path string) {
+	// Verificamos si existe una partición con el mismo nombre
+	if existeNombreParticion(*mbr, particion.Part_name, path) {
+		fmt.Println("Ya existe una partición con el mismo nombre.")
+		return
+	}
 	if particion.Part_fit[0] == 'B' {
-		mejorAjuste(mbr, particion)
+		mejorAjuste(mbr, particion, path)
 	} else if particion.Part_fit[0] == 'F' {
-		primerAjuste(mbr, particion)
+		primerAjuste(mbr, particion, path)
 	} else if particion.Part_fit[0] == 'W' {
 		peorAjuste(mbr, particion, path)
 	}
