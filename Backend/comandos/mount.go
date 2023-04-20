@@ -18,7 +18,7 @@ type Mount struct {
 func (mount *Mount) CrearId(lista *estructuras.ListaParticionesMontadas, particion Mount) string {
 	numero := lista.ObtenerNumero(particion.Path)
 	letra := lista.ObtenerLetra(numero)
-	id := "39" + letra + string(rune(numero))
+	id := "39" + numero + letra
 	return id
 }
 
@@ -46,9 +46,9 @@ func (mount *Mount) ReescribirStatus() {
 	}
 }
 
-func MountCommand(mount Mount, lista *estructuras.ListaParticionesMontadas) {
+func (mount *Mount) MountCommand(lista *estructuras.ListaParticionesMontadas) {
 	mount.ListaMontadas = lista
-	id := mount.CrearId(lista, mount)
+	id := mount.CrearId(lista, *mount)
 	if mount.ListaMontadas.ObtenerParticionMontada(id) != nil {
 		fmt.Println("La partición ya está montada")
 	} else {
@@ -67,6 +67,9 @@ func MountCommand(mount Mount, lista *estructuras.ListaParticionesMontadas) {
 		}
 		mount.ListaMontadas.AgregarParticionMontada(nuevaParticionMontada)
 		mount.ReescribirStatus()
+		fmt.Println("Id: " + id)
+		fmt.Println("Numero de disco: " + nuevaParticionMontada.NumeroDeDisco)
+		fmt.Println("Letra: " + nuevaParticionMontada.Letra)
 		fmt.Println("Partición montada con éxito")
 	}
 }

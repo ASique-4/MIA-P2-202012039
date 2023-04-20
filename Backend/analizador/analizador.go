@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"proyecto2/comandos"
+	"proyecto2/estructuras"
 )
 
 // Función para analizar el tipo del parámetro
@@ -211,6 +212,51 @@ func analizarFdisk(parametros string) {
 	comandos.CrearParticion(particion)
 }
 
+// Lista global de particiones montadas
+var particionesMontadas estructuras.ListaParticionesMontadas
+
+// Función para analizar los parámetros del comando mount
+func analizarMount(parametros string) {
+	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
+	var particion comandos.Mount
+	for parametros != "" {
+		tmpParam := parametros
+		tipo := getTipoParametro(tmpParam)
+		valor := strings.TrimSpace(strings.SplitN(getValorParametro(tmpParam), " ", 2)[0])
+		switch tipo {
+		case "path":
+			particion.Path = valor
+		case "name":
+			if len(valor) > 16 {
+				fmt.Printf("¡Error! El valor de name no puede ser mayor a 16 caracteres: %v\n", valor)
+				return
+			}
+			for i := 0; i < len(valor); i++ {
+				particion.Name[i] = valor[i]
+			}
+		default:
+			fmt.Printf("¡Error! mount solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
+			return
+		}
+		if index := strings.Index(parametros, ">"); index >= 0 {
+			parametros = parametros[index+1:]
+		} else {
+			parametros = ""
+		}
+
+		parametros = strings.TrimSpace(parametros)
+	}
+	//Verificamos que los parametros obligatorios esten
+	if particion.Path == "" || estaVaciaName(particion.Name) {
+		fmt.Println("¡Error! Parece que alguien olvidó poner los parámetros en 'mount'")
+		return
+	}
+
+	//Montamos la particion
+	particion.MountCommand(&particionesMontadas)
+	particionesMontadas.ImprimirListaParticionesMontadas()
+}
+
 func Analizar(comando string) {
 	// Lógica de análisis del comando aquí
 	token := strings.TrimSpace(strings.SplitN(comando, " ", 2)[0])
@@ -228,6 +274,7 @@ func Analizar(comando string) {
 		analizarFdisk(parametros)
 	} else if token == "mount" {
 		fmt.Println("Montando partición...")
+		analizarMount(parametros)
 	} else {
 		fmt.Println("Comando no reconocido")
 	}

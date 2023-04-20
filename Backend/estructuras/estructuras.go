@@ -2,6 +2,8 @@ package estructuras
 
 import (
 	"encoding/binary"
+	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -66,7 +68,7 @@ type ParticionMontada struct {
 	Id            string
 	Path          string
 	Letra         string
-	NumeroDeDisco int
+	NumeroDeDisco string
 	Name          [16]byte
 	Siguiente     *ParticionMontada
 	Anterior      *ParticionMontada
@@ -106,6 +108,13 @@ func (lista *ListaParticionesMontadas) ObtenerParticionMontada(id string) *Parti
 	return nil
 }
 
+// String to int
+func StringToInt(s string) int {
+	var i int
+	fmt.Sscanf(s, "%d", &i)
+	return i
+}
+
 // Función para eliminar una partición montada de la lista de particiones montadas
 func (lista *ListaParticionesMontadas) EliminarParticionMontada(id string) {
 	aux := lista.Primero
@@ -143,7 +152,7 @@ func (lista *ListaParticionesMontadas) ObtenerUltimaParticionMontadaPorNumeroDeD
 	aux := lista.Primero
 	var ultimaParticion *ParticionMontada
 	for aux != nil {
-		if aux.NumeroDeDisco == numeroDeDisco {
+		if StringToInt(aux.NumeroDeDisco) == numeroDeDisco {
 			ultimaParticion = aux
 		}
 		aux = aux.Siguiente
@@ -154,28 +163,32 @@ func (lista *ListaParticionesMontadas) ObtenerUltimaParticionMontadaPorNumeroDeD
 // Buscar si se repite el path si se repite retorna el número de disco
 // si no se repite retorna 1 si no hay particiones montadas
 // si ya hay particiones montadas retorna el número de disco más alto + 1
-func (lista *ListaParticionesMontadas) ObtenerNumero(path string) int {
+func (lista *ListaParticionesMontadas) ObtenerNumero(path string) string {
 	aux := lista.Primero
 	var numeroDeDisco int
 	for aux != nil {
 		if aux.Path == path {
 			return aux.NumeroDeDisco
 		}
-		if aux.NumeroDeDisco > numeroDeDisco {
-			numeroDeDisco = aux.NumeroDeDisco
+		aux = aux.Siguiente
+	}
+	if lista.Primero == nil {
+		return "1"
+	}
+	aux = lista.Primero
+	for aux != nil {
+		if StringToInt(aux.NumeroDeDisco) > numeroDeDisco {
+			numeroDeDisco = StringToInt(aux.NumeroDeDisco)
 		}
 		aux = aux.Siguiente
 	}
-	if numeroDeDisco == 0 {
-		return 1
-	}
-	return numeroDeDisco + 1
+	return strconv.Itoa(numeroDeDisco + 1)
 }
 
 // Función para obtener la ultima letra de la partición montada con el mismo número de disco
 // si no hay particiones montadas con el mismo número de disco retorna la letra A
 // si ya hay particiones montadas con el mismo número de disco retorna la siguiente letra en el abecedario
-func (lista *ListaParticionesMontadas) ObtenerLetra(numeroDeDisco int) string {
+func (lista *ListaParticionesMontadas) ObtenerLetra(numeroDeDisco string) string {
 	aux := lista.Primero
 	var ultimaLetra string
 	for aux != nil {
