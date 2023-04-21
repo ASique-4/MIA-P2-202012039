@@ -61,15 +61,11 @@ func (mount *Mount) MountCommand(lista *estructuras.ListaParticionesMontadas) {
 			Siguiente:     nil,
 			Anterior:      nil,
 			Mount_time:    time.Now(),
-			Unmount_time:  time.Now(),
 			Mount_count:   1,
 			Montada:       true,
 		}
 		mount.ListaMontadas.AgregarParticionMontada(nuevaParticionMontada)
 		mount.ReescribirStatus()
-		fmt.Println("Id: " + id)
-		fmt.Println("Numero de disco: " + nuevaParticionMontada.NumeroDeDisco)
-		fmt.Println("Letra: " + nuevaParticionMontada.Letra)
 		fmt.Println("Partición montada con éxito")
 	}
 }

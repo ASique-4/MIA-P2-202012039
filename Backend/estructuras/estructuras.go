@@ -73,7 +73,6 @@ type ParticionMontada struct {
 	Siguiente     *ParticionMontada
 	Anterior      *ParticionMontada
 	Mount_time    time.Time
-	Unmount_time  time.Time
 	Mount_count   int
 	Montada       bool
 }
@@ -201,4 +200,53 @@ func (lista *ListaParticionesMontadas) ObtenerLetra(numeroDeDisco string) string
 		return "A"
 	}
 	return string(ultimaLetra[0] + 1)
+}
+
+// Superbloque
+type SuperBloque struct {
+	S_filesystem_type   [4]byte
+	S_inodes_count      [16]byte
+	S_blocks_count      [16]byte
+	S_free_blocks_count [16]byte
+	S_free_inodes_count [16]byte
+	S_mtime             [16]byte
+	S_mnt_count         [4]byte
+	S_magic             [8]byte
+	S_inode_size        [4]byte
+	S_block_size        [4]byte
+	S_first_ino         [4]byte
+	S_first_blo         [4]byte
+	S_bm_inode_start    [16]byte
+	S_bm_block_start    [16]byte
+	S_inode_start       [16]byte
+	S_block_start       [16]byte
+}
+
+// Inodo
+type Inodo struct {
+	I_uid   [4]byte
+	I_gid   [4]byte
+	I_size  [16]byte
+	I_atime [16]byte
+	I_ctime [16]byte
+	I_mtime [16]byte
+	I_block [16]byte
+	I_type  [1]byte
+	I_perm  [4]byte
+}
+
+// Bloque de carpeta
+type BloqueCarpeta struct {
+	B_content [4]content
+}
+
+// Content
+type content struct {
+	B_name  [16]byte
+	B_inodo [4]byte
+}
+
+// Bloque de archivo
+type BloqueArchivo struct {
+	B_content [64]byte
 }
