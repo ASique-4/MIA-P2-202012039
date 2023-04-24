@@ -257,6 +257,87 @@ func analizarMount(parametros string) {
 	particionesMontadas.ImprimirListaParticionesMontadas()
 }
 
+func analizarMKFS(parametros string) {
+	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
+	var particion comandos.MKFS
+	for parametros != "" {
+		tmpParam := parametros
+		tipo := getTipoParametro(tmpParam)
+		valor := strings.TrimSpace(strings.SplitN(getValorParametro(tmpParam), " ", 2)[0])
+		switch tipo {
+		case "id":
+			if len(valor) > 16 {
+				fmt.Printf("¡Error! El valor de id no puede ser mayor a 16 caracteres: %v\n", valor)
+				return
+			}
+			particion.Id = valor
+		case "type":
+			if len(valor) != 1 {
+				fmt.Printf("¡Error! El valor de type debe ser un único carácter: %v\n", valor)
+				return
+			}
+			particion.Type = valor
+		default:
+			fmt.Printf("¡Error! mkfs solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
+			return
+		}
+		if index := strings.Index(parametros, ">"); index >= 0 {
+			parametros = parametros[index+1:]
+		} else {
+			parametros = ""
+		}
+
+		parametros = strings.TrimSpace(parametros)
+	}
+	//Verificamos que los parametros obligatorios esten
+	if particion.Id == "" {
+		fmt.Println("¡Error! Parece que alguien olvidó poner los parámetros en 'mkfs'")
+		return
+	}
+
+	//Creamos el sistema de archivos
+	particion.FormatearParticion(&particionesMontadas)
+
+}
+
+func analizarREP(parametros string) {
+	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
+	var comando comandos.Rep
+	for parametros != "" {
+		tmpParam := parametros
+		tipo := getTipoParametro(tmpParam)
+		valor := strings.TrimSpace(strings.SplitN(getValorParametro(tmpParam), " ", 2)[0])
+		switch tipo {
+		case "name":
+			comando.Name = valor
+		case "path":
+			comando.Path = valor
+		case "id":
+			comando.Id = valor
+		case "ruta":
+			comando.Ruta = valor
+		default:
+			fmt.Printf("¡Error! rep solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
+		}
+		if index := strings.Index(parametros, ">"); index >= 0 {
+			parametros = parametros[index+1:]
+		} else {
+			parametros = ""
+		}
+
+		parametros = strings.TrimSpace(parametros)
+	}
+	//Verificamos que los parametros obligatorios esten
+	if comando.Name == "" || comando.Path == "" || comando.Id == "" {
+		fmt.Println("¡Error! Parece que alguien olvidó poner los parámetros en 'rep'")
+		return
+	}
+
+	//Creamos el reporte
+	comando.Rep(&particionesMontadas)
+
+}
+
 func Analizar(comando string) {
 	// Lógica de análisis del comando aquí
 	token := strings.TrimSpace(strings.SplitN(comando, " ", 2)[0])
@@ -275,6 +356,12 @@ func Analizar(comando string) {
 	} else if token == "mount" {
 		fmt.Println("Montando partición...")
 		analizarMount(parametros)
+	} else if token == "mkfs" {
+		fmt.Println("Creando sistema de archivos...")
+		analizarMKFS(parametros)
+	} else if token == "rep" {
+		fmt.Println("Creando reporte...")
+		analizarREP(parametros)
 	} else {
 		fmt.Println("Comando no reconocido")
 	}

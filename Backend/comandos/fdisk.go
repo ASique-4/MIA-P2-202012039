@@ -497,7 +497,7 @@ func agregarParticionAlMBR(mbr *estructuras.MBR, particion estructuras.Particion
 
 func ImprimirMBR(mbr estructuras.MBR, path string) {
 	fmt.Println("MBR")
-	fmt.Printf("MBR_Tamaño: %d\n", mbr.Mbr_tamanio)
+	fmt.Printf("MBR_Tamaño: %d\n", bytesToInt(mbr.Mbr_tamanio))
 	fmt.Printf("MBR_Fecha_creacion: %s\n", mbr.Mbr_fecha_creacion)
 	fmt.Printf("MBR_Disk_signature: %d\n", mbr.Mbr_disk_signature)
 	fmt.Println("Particiones:")
@@ -570,9 +570,16 @@ func ImprimirMBR(mbr estructuras.MBR, path string) {
 
 }
 
+// int64 a [4]byte
+func intToBytes(n int) [4]byte {
+	var b [4]byte
+	binary.BigEndian.PutUint32(b[:], uint32(n))
+	return b
+}
+
 // Función para crear una partición
 func CrearParticion(particion Fdisk) {
-	fmt.Println("Size:", particion.Size)
+	fmt.Println("Size:", bytesToInt(particion.Size))
 	fmt.Println("Path:", particion.Path)
 	fmt.Println("Unit:", particion.Unit)
 	fmt.Println("Type:", particion.Type)
@@ -591,7 +598,7 @@ func CrearParticion(particion Fdisk) {
 	}
 
 	//Size
-	var tamanio int64 = int64(binary.LittleEndian.Uint32(particion.Size[:]))
+	var tamanio int = bytesToInt(particion.Size)
 	switch particion.Unit {
 	case 'B':
 		tamanio *= 1
@@ -600,7 +607,7 @@ func CrearParticion(particion Fdisk) {
 	case 'M':
 		tamanio *= 1024 * 1024
 	default:
-		tamanio *= 1024 * 1024
+		tamanio *= 1024
 	}
 
 	//Creamos la partición
@@ -609,9 +616,11 @@ func CrearParticion(particion Fdisk) {
 		Part_type:   particion.Type,
 		Part_fit:    particion.Fit,
 		Part_start:  [4]byte{},
-		Part_size:   particion.Size,
 		Part_name:   particion.Name,
 	}
+
+	// Guardamos el tamaño de la partición
+	binary.LittleEndian.PutUint32(particionNueva.Part_size[:], uint32(tamanio))
 
 	//Abrimos el archivo
 	file, err := os.OpenFile(particion.Path, os.O_RDWR, 0666)
