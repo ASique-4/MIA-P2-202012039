@@ -9,6 +9,7 @@ import (
 	"proyecto2/estructuras"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Rep struct {
@@ -185,6 +186,66 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas) {
 	} else {
 		fmt.Println("No se reconoce la extensión")
 	}
+}
+
+func reorteSUP(rep *Rep, lista *estructuras.ListaParticionesMontadas) {
+	// Abrimos el archivo
+	filePart, err := os.Open(lista.ObtenerParticionMontada(rep.Id).Path)
+	if err != nil {
+		fmt.Println("Error al abrir el archivo")
+		return
+	}
+	defer filePart.Close()
+
+	// Leemos el superbloque
+	var sb estructuras.SuperBloque
+	filePart.Seek(0, 0)
+	binary.Read(filePart, binary.BigEndian, &sb)
+
+	// Nombre del archivo
+	nombreDelArchivo := strings.Split(lista.ObtenerParticionMontada(rep.Id).Path, "/")[len(strings.Split(lista.ObtenerParticionMontada(rep.Id).Path, "/"))-1]
+
+	// Directorio
+	directorio := strings.Split(rep.Path, "/")[0]
+	for i := 1; i < len(strings.Split(rep.Path, "/"))-1; i++ {
+		directorio += "/" + strings.Split(rep.Path, "/")[i]
+	}
+
+	// Verificamos si existe el directorio
+	if _, err := os.Stat(directorio); os.IsNotExist(err) {
+		os.MkdirAll(directorio, 0777)
+	}
+
+	// path con extensión .dot
+	dot := strings.Split(rep.Path, ".")[0] + ".dot"
+	// Creamos el archivo
+	fileDot, err := os.Create(dot)
+	if err != nil {
+		fmt.Println("Error al crear el archivo")
+		return
+	}
+	defer fileDot.Close()
+
+	// Escribimos el archivo
+	// Escribimos el disco
+	fileDot.WriteString("digraph G {\n")
+	fileDot.WriteString("labelloc=\"t\";\n")
+	fileDot.WriteString("label=\"" + nombreDelArchivo + "\";\n")
+	fileDot.WriteString("parent [\n")
+	fileDot.WriteString("shape=plaintext\n")
+	fileDot.WriteString("label=<\n")
+	fileDot.WriteString("<table border=\"1\" cellborder=\"1\">\n")
+	fileDot.WriteString("<tr><td bgcolor='#EA5455'>SUPERBLOQUE</td>\n")
+
+	// Escribimos el superbloque
+	fileDot.WriteString("<tr><td bgcolor='#E4DCCF'>sb_nombre: " + nombreDelArchivo + "</td></tr>\n")
+	fileDot.WriteString("<tr><td bgcolor='#F9F5EB'>sb_inodos_count: " + intToString(byte16ToInt(sb.S_inodes_count)) + "</td></tr>\n")
+	fileDot.WriteString("<tr><td bgcolor='#E4DCCF'>sb_blocks_count: " + intToString(byte16ToInt(sb.S_blocks_count)) + "</td></tr>\n")
+	fileDot.WriteString("<tr><td bgcolor='#F9F5EB'>sb_inodos_free: " + intToString(byte16ToInt(sb.S_free_inodes_count)) + "</td></tr>\n")
+	fileDot.WriteString("<tr><td bgcolor='#E4DCCF'>sb_blocks_free: " + intToString(byte16ToInt(sb.S_free_blocks_count)) + "</td></tr>\n")
+	fileDot.WriteString("<tr><td bgcolor='#F9F5EB'>sb_date_creacion: " + time.Unix(int64(binary.LittleEndian.Uint32(sb.S_mtime[:])), 0).String() + "</td></tr>\n")
+	fileDot.WriteString("<tr><td bgcolor='#E4DCCF'>sb_mount_count: " + intToString(bytesToInt(sb.S_mnt_count)) + "</td></tr>\n")
+	fileDot.WriteString("<tr><td bgcolor='#F9F5EB'>sb_magic_num: " + intToString(byte16ToInt(sb.S_magic)) + "</td></tr>\n")
 
 }
 

@@ -338,6 +338,45 @@ func analizarREP(parametros string) {
 
 }
 
+// Usurio actual
+var usuarioActual estructuras.Usuario
+
+func analizarLogin(parametros string) {
+	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
+	var comando comandos.Login
+	for parametros != "" {
+		tmpParam := parametros
+		tipo := getTipoParametro(tmpParam)
+		valor := strings.TrimSpace(strings.SplitN(getValorParametro(tmpParam), " ", 2)[0])
+		switch tipo {
+		case "user":
+			comando.Usuario = valor
+		case "pwd":
+			comando.Pass = valor
+		case "id":
+			comando.Id = valor
+		default:
+			fmt.Printf("¡Error! login solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
+		}
+		if index := strings.Index(parametros, ">"); index >= 0 {
+			parametros = parametros[index+1:]
+		} else {
+			parametros = ""
+		}
+
+		parametros = strings.TrimSpace(parametros)
+	}
+	//Verificamos que los parametros obligatorios esten
+	if comando.Usuario == "" || comando.Pass == "" {
+		fmt.Println("¡Error! Parece que alguien olvidó poner los parámetros en 'login'")
+		return
+	}
+
+	//Creamos el reporte
+	comando.Login(&particionesMontadas)
+
+}
+
 func Analizar(comando string) {
 	// Lógica de análisis del comando aquí
 	token := strings.TrimSpace(strings.SplitN(comando, " ", 2)[0])
@@ -362,6 +401,9 @@ func Analizar(comando string) {
 	} else if token == "rep" {
 		fmt.Println("Creando reporte...")
 		analizarREP(parametros)
+	} else if token == "login" {
+		fmt.Println("Iniciando sesión...")
+		analizarLogin(parametros)
 	} else {
 		fmt.Println("Comando no reconocido")
 	}

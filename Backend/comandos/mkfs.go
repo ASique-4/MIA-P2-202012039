@@ -15,6 +15,33 @@ type MKFS struct {
 	Type string
 }
 
+func imprimirSuperBloque(superbloque estructuras.SuperBloque) {
+	fmt.Println("S_filesystem_type: ", string(superbloque.S_filesystem_type[:]))
+	fmt.Println("S_inodes_count: ", byte16ToInt(superbloque.S_inodes_count))
+	fmt.Println("S_blocks_count: ", byte16ToInt(superbloque.S_blocks_count))
+	fmt.Println("S_free_blocks_count: ", byte16ToInt(superbloque.S_free_blocks_count))
+	fmt.Println("S_free_inodes_count: ", byte16ToInt(superbloque.S_free_inodes_count))
+	fmt.Println("S_mtime: ", time.Unix(int64(binary.LittleEndian.Uint64(superbloque.S_mtime[:])), 0))
+	fmt.Println("S_mnt_count: ", bytesToInt(superbloque.S_mnt_count))
+	fmt.Println("S_magic: ", bytes16ToText(superbloque.S_magic))
+	fmt.Println("S_inode_size: ", bytesToInt(superbloque.S_inode_size))
+	fmt.Println("S_block_size: ", bytesToInt(superbloque.S_block_size))
+	fmt.Println("S_first_ino: ", bytesToInt(superbloque.S_first_ino))
+	fmt.Println("S_first_blo: ", bytesToInt(superbloque.S_first_blo))
+	fmt.Println("S_bm_inode_start: ", byte16ToInt(superbloque.S_bm_inode_start))
+	fmt.Println("S_bm_block_start: ", byte16ToInt(superbloque.S_bm_block_start))
+	fmt.Println("S_inode_start: ", byte16ToInt(superbloque.S_inode_start))
+	fmt.Println("S_block_start: ", byte16ToInt(superbloque.S_block_start))
+}
+
+func bytes16ToText(bytes [16]byte) string {
+	var text string
+	for i := 0; i < 16; i++ {
+		text += string(bytes[i])
+	}
+	return text
+}
+
 func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada *estructuras.ParticionMontada) {
 	// Nos posicionamos en el inicio de la partición
 	file.Seek(int64(bytesToInt(particion.Part_start)), 0)
@@ -29,10 +56,9 @@ func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada 
 	superbloque.S_free_blocks_count = [16]byte{byte(byte16ToInt(superbloque.S_blocks_count) - 1)}
 	superbloque.S_free_inodes_count = [16]byte{byte(inodes_count - 1)}
 	// Fecha de creación
-	now := time.Now().Format("2006-01-02 15:04:05")
-	copy(superbloque.S_mtime[:], now)
+	binary.LittleEndian.PutUint64(superbloque.S_mtime[:], uint64(time.Now().Unix()))
 	superbloque.S_mnt_count = [4]byte{byte(particionMontada.Mount_count)}
-	superbloque.S_magic = [8]byte{0xEF, 0x53}
+	superbloque.S_magic = [16]byte{0x30, 0x78, 0x45, 0x46, 0x35, 0x33}
 	superbloque.S_inode_size = [4]byte{byte(unsafe.Sizeof(estructuras.Inodo{}))}
 	superbloque.S_block_size = [4]byte{byte(unsafe.Sizeof(estructuras.BloqueArchivo{}))}
 	superbloque.S_first_ino = [4]byte{byte(0)}
@@ -84,7 +110,7 @@ func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada 
 			inodos[i].I_size = [16]byte{byte(unsafe.Sizeof(estructuras.BloqueCarpeta{}))}
 			inodos[i].I_atime = [16]byte{byte(0)}
 			inodos[i].I_ctime = [16]byte{byte(0)}
-			copy(inodos[i].I_mtime[:], now)
+			binary.LittleEndian.PutUint64(inodos[i].I_mtime[:], uint64(time.Now().Unix()))
 			inodos[i].I_block = [16]byte{byte(0)}
 			inodos[i].I_type = [1]byte{byte(1)}
 			inodos[i].I_perm = [4]byte{6, 6, 4} // 664
@@ -112,9 +138,16 @@ func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada 
 	binary.Write(file, binary.BigEndian, &bloques)
 
 	// Creamos el archivo de usuarios
-	file.Seek(int64(byte16ToInt(superbloque.S_block_start)), 0)
-	contenido := "1,G,root\n1,U,root,root,123\n"
+	file.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
+	contenido := [60]byte{}
+	copy(contenido[:], "1,G,root\n1,U,root,root,123\n")
 	binary.Write(file, binary.BigEndian, &contenido)
+
+	// Imprimimos el contenido del archivo
+	file.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
+	contenido2 := [60]byte{}
+	binary.Read(file, binary.BigEndian, &contenido2)
+	fmt.Println(string(contenido2[:]))
 
 }
 

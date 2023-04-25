@@ -211,7 +211,7 @@ type SuperBloque struct {
 	S_free_inodes_count [16]byte
 	S_mtime             [16]byte
 	S_mnt_count         [4]byte
-	S_magic             [8]byte
+	S_magic             [16]byte
 	S_inode_size        [4]byte
 	S_block_size        [4]byte
 	S_first_ino         [4]byte
@@ -249,4 +249,14 @@ type content struct {
 // Bloque de archivo
 type BloqueArchivo struct {
 	B_content [64]byte
+}
+
+type Usuario struct {
+	Username string
+	Password string
+	Group    string
+	Type     string
+	Id       string
+	UID      string
+	GID      string
 }
