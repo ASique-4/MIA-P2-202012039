@@ -10,19 +10,13 @@ import (
 	"unsafe"
 )
 
-type Mkgrp struct {
-	Name string
+type Mkuser struct {
+	Usr string
+	Pwd string
+	Grp string
 }
 
-func stringToInt(str string) int {
-	num := 0
-	for _, c := range str {
-		num += int(c)
-	}
-	return num
-}
-
-func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas) {
+func (mkuser *Mkuser) Mkuser(id string, lista *estructuras.ListaParticionesMontadas) {
 	// Obtener la partición montada
 	particionMontada := lista.ObtenerParticionMontada(id)
 	if particionMontada == nil {
@@ -73,7 +67,7 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 	// Convertimos a string
 	lineaStr := string(linea[:])
 
-	ultimoGrupo := "0"
+	ultimoUser := "0"
 	tamanioTxt := 0
 
 	for _, bytes := range linea {
@@ -82,7 +76,7 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 		}
 	}
 
-	// Recorremos el archivo users.txt y buscamos el ultimo grupo
+	// Recorremos el archivo users.txt y buscamos el ultimo usuario
 	// txt aceptado grupos -> GID, tipo, grupo
 	// txt aceptado usuarios -> UID, tipo, grupo, usuario, password
 	lineas := strings.Split(lineaStr, "\n")
@@ -97,14 +91,14 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 				fmt.Println("Error en el archivo users.txt")
 				break
 			}
-			if strings.TrimSpace(lineaSplit[1]) == "G" {
-				if mkgrp.Name == strings.TrimSpace(lineaSplit[2]) {
-					fmt.Println("Ya existe un grupo con ese nombre")
+			if strings.TrimSpace(lineaSplit[1]) == "U" {
+				if mkuser.Usr == strings.TrimSpace(lineaSplit[3]) {
+					fmt.Println("Ya existe un usuario con ese nombre")
 					return
 				}
-				// Verificamos si es el ultimo grupo
-				if stringToInt(ultimoGrupo) < stringToInt(lineaSplit[0]) {
-					ultimoGrupo = lineaSplit[0]
+				// Verificamos si es el ultimo usuario
+				if stringToInt(ultimoUser) < stringToInt(lineaSplit[0]) {
+					ultimoUser = lineaSplit[0]
 				}
 
 			}
@@ -112,10 +106,10 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 	}
 
 	// Lo agregamos al final del [64]byte
-	ultimoGrupoInt, _ := strconv.Atoi(ultimoGrupo)
-	ultimoGrupoInt++
-	ultimoGrupo = strconv.Itoa(ultimoGrupoInt)
-	copy(lineaCopia[tamanioTxt:], []byte(ultimoGrupo+",G,"+mkgrp.Name+"\n"))
+	ultimoUserInt, _ := strconv.Atoi(ultimoUser)
+	ultimoUserInt++
+	ultimoUser = strconv.Itoa(ultimoUserInt)
+	copy(lineaCopia[tamanioTxt:], []byte(ultimoUser+",U,"+mkuser.Grp+","+mkuser.Usr+","+mkuser.Pwd+"\n"))
 
 	// Nos posicionamos al inicio del archivo users.txt
 	filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
@@ -127,4 +121,12 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 		return
 	}
 
+	// Imprimimos el reporte
+	fmt.Println("Usuario creado con éxito")
+
+	// Impimimos el archivo
+	filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
+	linea2 := [64]byte{}
+	binary.Read(filePart, binary.LittleEndian, &linea2)
+	fmt.Println(string(linea2[:]))
 }

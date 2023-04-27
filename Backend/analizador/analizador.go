@@ -449,6 +449,41 @@ func analizarRmgrp(parametros string) {
 	comando.Rmgrp(usuarioActual.PartID, &particionesMontadas)
 }
 
+func analizarMkuser(parametros string) {
+	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
+	var comando comandos.Mkuser
+	for parametros != "" {
+		tmpParam := parametros
+		tipo := getTipoParametro(tmpParam)
+		valor := strings.TrimSpace(strings.SplitN(getValorParametro(tmpParam), " ", 2)[0])
+		switch tipo {
+		case "user":
+			comando.Usr = valor
+		case "pwd":
+			comando.Pwd = valor
+		case "grp":
+			comando.Grp = valor
+		default:
+			fmt.Printf("¡Error! mkusr solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
+		}
+		if index := strings.Index(parametros, ">"); index >= 0 {
+			parametros = parametros[index+1:]
+		} else {
+			parametros = ""
+		}
+
+		parametros = strings.TrimSpace(parametros)
+	}
+	//Verificamos que los parametros obligatorios esten
+	if comando.Usr == "" || comando.Pwd == "" || comando.Grp == "" {
+		fmt.Println("¡Error! Parece que alguien olvidó poner los parámetros en 'mkusr'")
+		return
+	}
+
+	//Creamos el reporte
+	comando.Mkuser(usuarioActual.PartID, &particionesMontadas)
+}
+
 func Analizar(comando string) {
 	// Lógica de análisis del comando aquí
 	token := strings.TrimSpace(strings.SplitN(comando, " ", 2)[0])
@@ -485,6 +520,9 @@ func Analizar(comando string) {
 	} else if token == "rmgrp" {
 		fmt.Println("Eliminando grupo...")
 		analizarRmgrp(parametros)
+	} else if token == "mkusr" {
+		fmt.Println("Creando usuario...")
+		analizarMkuser(parametros)
 	} else {
 		fmt.Println("Comando no reconocido")
 	}
