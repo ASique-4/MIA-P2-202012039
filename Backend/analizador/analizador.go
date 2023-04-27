@@ -418,6 +418,37 @@ func analizarMkgrp(parametros string) {
 
 }
 
+func analizarRmgrp(parametros string) {
+	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
+	var comando comandos.Rmgrp
+	for parametros != "" {
+		tmpParam := parametros
+		tipo := getTipoParametro(tmpParam)
+		valor := strings.TrimSpace(strings.SplitN(getValorParametro(tmpParam), " ", 2)[0])
+		switch tipo {
+		case "name":
+			comando.Name = valor
+		default:
+			fmt.Printf("¡Error! rmgrp solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
+		}
+		if index := strings.Index(parametros, ">"); index >= 0 {
+			parametros = parametros[index+1:]
+		} else {
+			parametros = ""
+		}
+
+		parametros = strings.TrimSpace(parametros)
+	}
+	//Verificamos que los parametros obligatorios esten
+	if comando.Name == "" {
+		fmt.Println("¡Error! Parece que alguien olvidó poner los parámetros en 'rmgrp'")
+		return
+	}
+
+	//Creamos el reporte
+	comando.Rmgrp(usuarioActual.PartID, &particionesMontadas)
+}
+
 func Analizar(comando string) {
 	// Lógica de análisis del comando aquí
 	token := strings.TrimSpace(strings.SplitN(comando, " ", 2)[0])
@@ -451,6 +482,9 @@ func Analizar(comando string) {
 	} else if token == "mkgrp" {
 		fmt.Println("Creando grupo...")
 		analizarMkgrp(parametros)
+	} else if token == "rmgrp" {
+		fmt.Println("Eliminando grupo...")
+		analizarRmgrp(parametros)
 	} else {
 		fmt.Println("Comando no reconocido")
 	}

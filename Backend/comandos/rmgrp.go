@@ -5,24 +5,15 @@ import (
 	"fmt"
 	"os"
 	"proyecto2/estructuras"
-	"strconv"
 	"strings"
 	"unsafe"
 )
 
-type Mkgrp struct {
+type Rmgrp struct {
 	Name string
 }
 
-func stringToInt(str string) int {
-	num := 0
-	for _, c := range str {
-		num += int(c)
-	}
-	return num
-}
-
-func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas) {
+func (rmgrp *Rmgrp) Rmgrp(id string, lista *estructuras.ListaParticionesMontadas) {
 	// Obtener la partición montada
 	particionMontada := lista.ObtenerParticionMontada(id)
 	if particionMontada == nil {
@@ -73,20 +64,12 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 	// Convertimos a string
 	lineaStr := string(linea[:])
 
-	ultimoGrupo := "0"
-	tamanioTxt := 0
-
-	for _, bytes := range linea {
-		if bytes != 0 {
-			tamanioTxt++
-		}
-	}
-
-	// Recorremos el archivo users.txt y buscamos el ultimo grupo
+	// Recorremos el archivo users.txt y buscamos el grupo a eliminar
 	// txt aceptado grupos -> GID, tipo, grupo
 	// txt aceptado usuarios -> UID, tipo, grupo, usuario, password
 	lineas := strings.Split(lineaStr, "\n")
-	for _, linea := range lineas {
+	posTxt := 0 // Inicializar la posición del texto
+	for i, linea := range lineas {
 		if linea != "" {
 			lineaSplit := strings.Split(linea, ",")
 
@@ -97,40 +80,26 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 				fmt.Println("Error en el archivo users.txt")
 				break
 			}
-			if strings.TrimSpace(lineaSplit[1]) == "G" {
-				if mkgrp.Name == strings.TrimSpace(lineaSplit[2]) {
-					fmt.Println("Ya existe un grupo con ese nombre")
+			if lineaSplit[1] == "G" {
+				// Verificamos si es el grupo a eliminar
+				if lineaSplit[2] == rmgrp.Name {
+					// Eliminamos el grupo
+					lineaSplit[0] = "0"
+					// Actualizamos el valor de lineaSplit en lineas
+					lineas[i] = strings.Join(lineaSplit, ",")
+					// Actualizamos el archivo users.txt
+					// Convertimos lineas a string
+					lineaStr = strings.Join(lineas, "\n")
+					// Convertimos lineaStr a [64]byte
+					copy(lineaCopia[:], lineaStr[:])
+					// Escribimos en el archivo
+					filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
+					binary.Write(filePart, binary.LittleEndian, &lineaCopia)
 					return
 				}
-				// Verificamos si es el ultimo grupo
-				if stringToInt(ultimoGrupo) < stringToInt(lineaSplit[0]) {
-					ultimoGrupo = lineaSplit[0]
-				}
-
 			}
+			posTxt += len(lineaSplit) // Actualizar la posición del texto
 		}
 	}
-
-	// Lo agregamos al final del [64]byte
-	ultimoGrupoInt, _ := strconv.Atoi(ultimoGrupo)
-	ultimoGrupoInt++
-	ultimoGrupo = strconv.Itoa(ultimoGrupoInt)
-	copy(lineaCopia[tamanioTxt:], []byte(ultimoGrupo+",G,"+mkgrp.Name+"\n"))
-
-	// Nos posicionamos al inicio del archivo users.txt
-	filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
-
-	// Escribimos el archivo
-	err = binary.Write(filePart, binary.LittleEndian, &lineaCopia)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// Impimimos el archivo
-	filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
-	linea2 := [64]byte{}
-	binary.Read(filePart, binary.LittleEndian, &linea2)
-	fmt.Println(string(linea2[:]))
 
 }
