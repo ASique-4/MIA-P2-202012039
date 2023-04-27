@@ -259,4 +259,5 @@ type Usuario struct {
 	Id       string
 	UID      string
 	GID      string
+	PartID   string
 }

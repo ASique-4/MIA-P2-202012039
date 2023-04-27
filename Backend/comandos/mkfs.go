@@ -135,19 +135,13 @@ func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada 
 		bloques[i].B_content = [64]byte{byte(0)}
 	}
 
-	binary.Write(file, binary.BigEndian, &bloques)
+	binary.Write(file, binary.LittleEndian, &bloques)
 
 	// Creamos el archivo de usuarios
 	file.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
-	contenido := [60]byte{}
+	contenido := [64]byte{}
 	copy(contenido[:], "1,G,root\n1,U,root,root,123\n")
-	binary.Write(file, binary.BigEndian, &contenido)
-
-	// Imprimimos el contenido del archivo
-	file.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
-	contenido2 := [60]byte{}
-	binary.Read(file, binary.BigEndian, &contenido2)
-	fmt.Println(string(contenido2[:]))
+	binary.Write(file, binary.LittleEndian, &contenido)
 
 }
 

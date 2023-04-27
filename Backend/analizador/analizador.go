@@ -339,7 +339,7 @@ func analizarREP(parametros string) {
 }
 
 // Usurio actual
-var usuarioActual estructuras.Usuario
+var usuarioActual *estructuras.Usuario
 
 func analizarLogin(parametros string) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
@@ -372,8 +372,49 @@ func analizarLogin(parametros string) {
 		return
 	}
 
+	//Guaramos el usuario
+	usuarioActual = comando.Login(&particionesMontadas)
+
+}
+
+func analizarLogout() {
+	if usuarioActual == (nil) {
+		fmt.Println("¡Error! No hay ningún usuario logueado")
+		return
+	}
+	usuarioActual = new(estructuras.Usuario)
+	fmt.Println("Se ha cerrado la sesión correctamente")
+}
+
+func analizarMkgrp(parametros string) {
+	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
+	var comando comandos.Mkgrp
+	for parametros != "" {
+		tmpParam := parametros
+		tipo := getTipoParametro(tmpParam)
+		valor := strings.TrimSpace(strings.SplitN(getValorParametro(tmpParam), " ", 2)[0])
+		switch tipo {
+		case "name":
+			comando.Name = valor
+		default:
+			fmt.Printf("¡Error! mkgrp solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
+		}
+		if index := strings.Index(parametros, ">"); index >= 0 {
+			parametros = parametros[index+1:]
+		} else {
+			parametros = ""
+		}
+
+		parametros = strings.TrimSpace(parametros)
+	}
+	//Verificamos que los parametros obligatorios esten
+	if comando.Name == "" {
+		fmt.Println("¡Error! Parece que alguien olvidó poner los parámetros en 'mkgrp'")
+		return
+	}
+
 	//Creamos el reporte
-	comando.Login(&particionesMontadas)
+	comando.Mkgrp(usuarioActual.PartID, &particionesMontadas)
 
 }
 
@@ -404,6 +445,12 @@ func Analizar(comando string) {
 	} else if token == "login" {
 		fmt.Println("Iniciando sesión...")
 		analizarLogin(parametros)
+	} else if token == "logout" {
+		fmt.Println("Cerrando sesión...")
+		analizarLogout()
+	} else if token == "mkgrp" {
+		fmt.Println("Creando grupo...")
+		analizarMkgrp(parametros)
 	} else {
 		fmt.Println("Comando no reconocido")
 	}

@@ -56,7 +56,7 @@ func (login *Login) Login(lista *estructuras.ListaParticionesMontadas) *estructu
 	filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
 
 	// Leemos los siguientes 60 bytes
-	linea := [60]byte{}
+	linea := [64]byte{}
 	binary.Read(filePart, binary.BigEndian, &linea)
 
 	// Convertimos la linea a string
@@ -83,6 +83,7 @@ func (login *Login) Login(lista *estructuras.ListaParticionesMontadas) *estructu
 						Group:    lineaSplit[2],
 						Username: lineaSplit[3],
 						Password: lineaSplit[4],
+						PartID:   login.Id,
 					}
 					fmt.Println("Login correcto")
 					return &usuario
@@ -91,7 +92,7 @@ func (login *Login) Login(lista *estructuras.ListaParticionesMontadas) *estructu
 		}
 
 		// Sacamos la linea del string
-		linea = [60]byte{}
+		linea = [64]byte{}
 		copy(linea[:], lineaStr)
 
 		// Leemos la siguiente línea
