@@ -102,4 +102,6 @@ func (rmgrp *Rmgrp) Rmgrp(id string, lista *estructuras.ListaParticionesMontadas
 		}
 	}
 
+	fmt.Println("No se encontró el grupo")
+
 }
