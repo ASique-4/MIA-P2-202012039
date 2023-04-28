@@ -13,11 +13,12 @@ type Rmusr struct {
 	User string
 }
 
-func (rmuser *Rmusr) Rmusr(id string, lista *estructuras.ListaParticionesMontadas) {
+func (rmuser *Rmusr) Rmusr(id string, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	//Obtener la partición montada
 	particionMontada := lista.ObtenerParticionMontada(id)
 	if particionMontada == nil {
 		fmt.Println("No se encontró la partición montada")
+		mensaje.Mensaje = "No se encontró la partición montada"
 		return
 	}
 
@@ -25,6 +26,7 @@ func (rmuser *Rmusr) Rmusr(id string, lista *estructuras.ListaParticionesMontada
 	filePart, err := os.OpenFile(particionMontada.Path, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println(err)
+		mensaje.Mensaje = "Error al abrir el archivo"
 		return
 	}
 	defer filePart.Close()
@@ -78,8 +80,8 @@ func (rmuser *Rmusr) Rmusr(id string, lista *estructuras.ListaParticionesMontada
 			}
 			if lineaSplit[1] == "U" {
 				if len(lineaSplit) < 5 {
-					fmt.Println(lineaSplit)
 					fmt.Println("Error en el archivo users.txt")
+					mensaje.Mensaje = "Error en el archivo users.txt"
 					break
 				}
 				// Verificamos si es el usuario a eliminar
@@ -96,6 +98,7 @@ func (rmuser *Rmusr) Rmusr(id string, lista *estructuras.ListaParticionesMontada
 					// Escribimos en el archivo
 					filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
 					binary.Write(filePart, binary.LittleEndian, &lineaCopia)
+					mensaje.Mensaje = "Usuario eliminado"
 					return
 				}
 			}
@@ -105,5 +108,6 @@ func (rmuser *Rmusr) Rmusr(id string, lista *estructuras.ListaParticionesMontada
 
 	//Imprimimos el error
 	fmt.Println("No se encontró el usuario")
+	mensaje.Mensaje = "No se encontró el usuario"
 
 }

@@ -15,11 +15,12 @@ type Login struct {
 	Id      string
 }
 
-func (login *Login) Login(lista *estructuras.ListaParticionesMontadas) *estructuras.Usuario {
+func (login *Login) Login(lista *estructuras.ListaParticionesMontadas, w *estructuras.Mensaje) *estructuras.Usuario {
 	// Obtener la partición montada
 	particionMontada := lista.ObtenerParticionMontada(login.Id)
 	if particionMontada == nil {
 		fmt.Println("No se encontró la partición montada")
+		w.Mensaje = "No se encontró la partición montada"
 		return nil
 	}
 
@@ -27,6 +28,7 @@ func (login *Login) Login(lista *estructuras.ListaParticionesMontadas) *estructu
 	filePart, err := os.Open(particionMontada.Path)
 	if err != nil {
 		fmt.Println(err)
+		w.Mensaje = "Error al abrir el archivo"
 		return nil
 	}
 	defer filePart.Close()
@@ -68,7 +70,6 @@ func (login *Login) Login(lista *estructuras.ListaParticionesMontadas) *estructu
 	for linea[0] != 0 {
 		// Separamos la linea por comas
 		lineaSplit := strings.Split(lineaStr, ",")
-		fmt.Println(lineaSplit[1])
 
 		// Verificamos si es un usuario
 		if lineaSplit[1] == "U" {
@@ -86,6 +87,7 @@ func (login *Login) Login(lista *estructuras.ListaParticionesMontadas) *estructu
 						PartID:   login.Id,
 					}
 					fmt.Println("Login correcto")
+					w.Mensaje = "Login correcto"
 					return &usuario
 				}
 			}
@@ -101,6 +103,7 @@ func (login *Login) Login(lista *estructuras.ListaParticionesMontadas) *estructu
 	}
 
 	fmt.Println("Login incorrecto")
+	w.Mensaje = "Login incorrecto"
 	return nil
 
 }

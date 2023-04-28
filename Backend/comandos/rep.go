@@ -46,12 +46,13 @@ func calcularEspacioLibreMBR(mbr estructuras.MBR) float64 {
 	return espacioLibre
 }
 
-func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas) {
+func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 
 	// Obtener la partición montada
 	particionMontada := lista.ObtenerParticionMontada(rep.Id)
 	if particionMontada == nil {
 		fmt.Println("No se encontró la partición montada")
+		mensaje.Mensaje = "No se encontró la partición montada"
 		return
 	}
 
@@ -59,6 +60,7 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas) {
 	filePart, err := os.Open(particionMontada.Path)
 	if err != nil {
 		fmt.Println("Error al abrir el archivo")
+		mensaje.Mensaje = "Error al abrir el archivo"
 		return
 	}
 	defer filePart.Close()
@@ -84,6 +86,7 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas) {
 	fileDot, err := os.Create(dot)
 	if err != nil {
 		fmt.Println("Error al crear el archivo")
+		mensaje.Mensaje = "Error al crear el archivo"
 		return
 	}
 	defer fileDot.Close()
@@ -185,14 +188,18 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas) {
 		cmd.Run()
 	} else {
 		fmt.Println("No se reconoce la extensión")
+		mensaje.Mensaje = "No se reconoce la extensión"
 	}
+
+	mensaje.Mensaje = "Reporte generado con éxito"
 }
 
-func reorteSUP(rep *Rep, lista *estructuras.ListaParticionesMontadas) {
+func reorteSP(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	// Abrimos el archivo
 	filePart, err := os.Open(lista.ObtenerParticionMontada(rep.Id).Path)
 	if err != nil {
 		fmt.Println("Error al abrir el archivo")
+		mensaje.Mensaje = "Error al abrir el archivo"
 		return
 	}
 	defer filePart.Close()
@@ -222,6 +229,7 @@ func reorteSUP(rep *Rep, lista *estructuras.ListaParticionesMontadas) {
 	fileDot, err := os.Create(dot)
 	if err != nil {
 		fmt.Println("Error al crear el archivo")
+		mensaje.Mensaje = "Error al crear el archivo"
 		return
 	}
 	defer fileDot.Close()
@@ -259,11 +267,12 @@ func floatToString(input_num float64) string {
 	return fmt.Sprintf("%f", input_num)
 }
 
-func (rep *Rep) Rep(lista *estructuras.ListaParticionesMontadas) {
+func (rep *Rep) Rep(lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	switch strings.ToLower(rep.Name) {
 	case "disk":
-		ReporteDisk(rep, lista)
+		ReporteDisk(rep, lista, mensaje)
 	default:
 		fmt.Println("No se reconoce el reporte")
+		mensaje.Mensaje = "No se reconoce el reporte"
 	}
 }

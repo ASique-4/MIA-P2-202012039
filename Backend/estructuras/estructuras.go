@@ -261,3 +261,8 @@ type Usuario struct {
 	GID      string
 	PartID   string
 }
+
+type Mensaje struct {
+	Accion  string `json:"accion"`
+	Mensaje string `json:"mensaje"`
+}

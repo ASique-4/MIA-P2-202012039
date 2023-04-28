@@ -42,7 +42,7 @@ func bytes16ToText(bytes [16]byte) string {
 	return text
 }
 
-func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada *estructuras.ParticionMontada) {
+func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada *estructuras.ParticionMontada, mensaje *estructuras.Mensaje) {
 	// Nos posicionamos en el inicio de la partición
 	file.Seek(int64(bytesToInt(particion.Part_start)), 0)
 	// Creamos el superbloque
@@ -142,6 +142,7 @@ func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada 
 	contenido := [64]byte{}
 	copy(contenido[:], "1,G,root\n1,U,root,root,123\n")
 	binary.Write(file, binary.LittleEndian, &contenido)
+	mensaje.Mensaje = "Se formateó la partición correctamente."
 
 }
 
@@ -149,13 +150,15 @@ func byte16ToInt(b [16]byte) int {
 	return int(binary.BigEndian.Uint16(b[:]))
 }
 
-func (mkfs *MKFS) FormatearParticion(lista *estructuras.ListaParticionesMontadas) {
+func (mkfs *MKFS) FormatearParticion(lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	// Obtenemos la partición
 	particion := lista.ObtenerParticionMontada(mkfs.Id)
 	// Abrimos el archivo
 	file, err := os.OpenFile(particion.Path, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println(err)
+		mensaje.Mensaje = "ERROR: No se pudo abrir el archivo."
+		return
 	}
 	defer file.Close()
 	// Leemos el MBR
@@ -166,7 +169,7 @@ func (mkfs *MKFS) FormatearParticion(lista *estructuras.ListaParticionesMontadas
 	for i := 0; i < len(Particiones); i++ {
 		if Particiones[i].Part_name == particion.Name {
 			// Formateamos la partición
-			crearEXT2(file, Particiones[i], particion)
+			crearEXT2(file, Particiones[i], particion, mensaje)
 			// Escribimos el MBR
 			file.Seek(0, 0)
 			binary.Write(file, binary.BigEndian, &mbr)

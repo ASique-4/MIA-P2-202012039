@@ -13,11 +13,12 @@ type Rmgrp struct {
 	Name string
 }
 
-func (rmgrp *Rmgrp) Rmgrp(id string, lista *estructuras.ListaParticionesMontadas) {
+func (rmgrp *Rmgrp) Rmgrp(id string, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	// Obtener la partición montada
 	particionMontada := lista.ObtenerParticionMontada(id)
 	if particionMontada == nil {
 		fmt.Println("No se encontró la partición montada")
+		mensaje.Mensaje = "No se encontró la partición montada"
 		return
 	}
 
@@ -25,6 +26,7 @@ func (rmgrp *Rmgrp) Rmgrp(id string, lista *estructuras.ListaParticionesMontadas
 	filePart, err := os.OpenFile(particionMontada.Path, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println(err)
+		mensaje.Mensaje = "Error al abrir el archivo"
 		return
 	}
 	defer filePart.Close()
@@ -78,6 +80,7 @@ func (rmgrp *Rmgrp) Rmgrp(id string, lista *estructuras.ListaParticionesMontadas
 			}
 			if len(lineaSplit) < 3 {
 				fmt.Println("Error en el archivo users.txt")
+				mensaje.Mensaje = "Error en el archivo users.txt"
 				break
 			}
 			if lineaSplit[1] == "G" {
@@ -95,6 +98,7 @@ func (rmgrp *Rmgrp) Rmgrp(id string, lista *estructuras.ListaParticionesMontadas
 					// Escribimos en el archivo
 					filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
 					binary.Write(filePart, binary.LittleEndian, &lineaCopia)
+					mensaje.Mensaje = "Grupo eliminado"
 					return
 				}
 			}
@@ -103,5 +107,6 @@ func (rmgrp *Rmgrp) Rmgrp(id string, lista *estructuras.ListaParticionesMontadas
 	}
 
 	fmt.Println("No se encontró el grupo")
+	mensaje.Mensaje = "No se encontró el grupo"
 
 }

@@ -16,11 +16,12 @@ type Mkuser struct {
 	Grp string
 }
 
-func (mkuser *Mkuser) Mkuser(id string, lista *estructuras.ListaParticionesMontadas) {
+func (mkuser *Mkuser) Mkuser(id string, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	// Obtener la partición montada
 	particionMontada := lista.ObtenerParticionMontada(id)
 	if particionMontada == nil {
 		fmt.Println("No se encontró la partición montada")
+		mensaje.Mensaje = "No se encontró la partición montada"
 		return
 	}
 
@@ -28,6 +29,7 @@ func (mkuser *Mkuser) Mkuser(id string, lista *estructuras.ListaParticionesMonta
 	filePart, err := os.OpenFile(particionMontada.Path, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println(err)
+		mensaje.Mensaje = "Error al abrir el archivo"
 		return
 	}
 	defer filePart.Close()
@@ -89,11 +91,13 @@ func (mkuser *Mkuser) Mkuser(id string, lista *estructuras.ListaParticionesMonta
 			}
 			if len(lineaSplit) < 3 {
 				fmt.Println("Error en el archivo users.txt")
-				break
+				mensaje.Mensaje = "Error en el archivo users.txt"
+				return
 			}
 			if strings.TrimSpace(lineaSplit[1]) == "U" {
 				if mkuser.Usr == strings.TrimSpace(lineaSplit[3]) {
 					fmt.Println("Ya existe un usuario con ese nombre")
+					mensaje.Mensaje = "Ya existe un usuario con ese nombre"
 					return
 				}
 				// Verificamos si es el ultimo usuario
@@ -118,15 +122,12 @@ func (mkuser *Mkuser) Mkuser(id string, lista *estructuras.ListaParticionesMonta
 	err = binary.Write(filePart, binary.LittleEndian, &lineaCopia)
 	if err != nil {
 		fmt.Println(err)
+		mensaje.Mensaje = "Error al escribir el archivo users.txt"
 		return
 	}
 
 	// Imprimimos el reporte
 	fmt.Println("Usuario creado con éxito")
+	mensaje.Mensaje = "Usuario creado con éxito"
 
-	// Impimimos el archivo
-	filePart.Seek(int64(byte16ToInt(superbloque.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
-	linea2 := [64]byte{}
-	binary.Read(filePart, binary.LittleEndian, &linea2)
-	fmt.Println(string(linea2[:]))
 }

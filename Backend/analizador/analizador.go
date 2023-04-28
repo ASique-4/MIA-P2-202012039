@@ -60,7 +60,7 @@ func estaVaciaName(b [16]byte) bool {
 }
 
 // Función para analizar los parámetros del comando rmdisk
-func analizarRmdisk(parametros string) {
+func analizarRmdisk(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var disco comandos.Rmdisk
 	for parametros != "" {
@@ -81,11 +81,11 @@ func analizarRmdisk(parametros string) {
 			parametros = ""
 		}
 	}
-	comandos.EliminarDiscos(disco)
+	comandos.EliminarDiscos(disco, w)
 }
 
 // Función para analizar los parámetros del comando mkdisk
-func analizarMkdisk(parametros string) {
+func analizarMkdisk(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var disco comandos.Mkdisk
 	for parametros != "" {
@@ -132,11 +132,11 @@ func analizarMkdisk(parametros string) {
 		return
 	}
 	//Creamos el disco
-	comandos.CrearDiscos(disco)
+	comandos.CrearDiscos(disco, w)
 }
 
 // Función para analizar los parámetros del comando fdisk
-func analizarFdisk(parametros string) {
+func analizarFdisk(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var particion comandos.Fdisk
 	for parametros != "" {
@@ -209,14 +209,14 @@ func analizarFdisk(parametros string) {
 	}
 
 	//Creamos la particion
-	comandos.CrearParticion(particion)
+	comandos.CrearParticion(particion, w)
 }
 
 // Lista global de particiones montadas
 var particionesMontadas estructuras.ListaParticionesMontadas
 
 // Función para analizar los parámetros del comando mount
-func analizarMount(parametros string) {
+func analizarMount(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var particion comandos.Mount
 	for parametros != "" {
@@ -253,11 +253,11 @@ func analizarMount(parametros string) {
 	}
 
 	//Montamos la particion
-	particion.MountCommand(&particionesMontadas)
+	particion.MountCommand(&particionesMontadas, w)
 	particionesMontadas.ImprimirListaParticionesMontadas()
 }
 
-func analizarMKFS(parametros string) {
+func analizarMKFS(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var particion comandos.MKFS
 	for parametros != "" {
@@ -296,11 +296,11 @@ func analizarMKFS(parametros string) {
 	}
 
 	//Creamos el sistema de archivos
-	particion.FormatearParticion(&particionesMontadas)
+	particion.FormatearParticion(&particionesMontadas, w)
 
 }
 
-func analizarREP(parametros string) {
+func analizarREP(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Rep
 	for parametros != "" {
@@ -334,14 +334,14 @@ func analizarREP(parametros string) {
 	}
 
 	//Creamos el reporte
-	comando.Rep(&particionesMontadas)
+	comando.Rep(&particionesMontadas, w)
 
 }
 
 // Usurio actual
 var usuarioActual *estructuras.Usuario
 
-func analizarLogin(parametros string) {
+func analizarLogin(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Login
 	for parametros != "" {
@@ -373,7 +373,7 @@ func analizarLogin(parametros string) {
 	}
 
 	//Guaramos el usuario
-	usuarioActual = comando.Login(&particionesMontadas)
+	usuarioActual = comando.Login(&particionesMontadas, w)
 
 }
 
@@ -386,7 +386,7 @@ func analizarLogout() {
 	fmt.Println("Se ha cerrado la sesión correctamente")
 }
 
-func analizarMkgrp(parametros string) {
+func analizarMkgrp(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Mkgrp
 	for parametros != "" {
@@ -414,11 +414,11 @@ func analizarMkgrp(parametros string) {
 	}
 
 	//Creamos el reporte
-	comando.Mkgrp(usuarioActual.PartID, &particionesMontadas)
+	comando.Mkgrp(usuarioActual.PartID, &particionesMontadas, w)
 
 }
 
-func analizarRmgrp(parametros string) {
+func analizarRmgrp(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Rmgrp
 	for parametros != "" {
@@ -446,10 +446,10 @@ func analizarRmgrp(parametros string) {
 	}
 
 	//Creamos el reporte
-	comando.Rmgrp(usuarioActual.PartID, &particionesMontadas)
+	comando.Rmgrp(usuarioActual.PartID, &particionesMontadas, w)
 }
 
-func analizarMkuser(parametros string) {
+func analizarMkuser(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Mkuser
 	for parametros != "" {
@@ -481,10 +481,10 @@ func analizarMkuser(parametros string) {
 	}
 
 	//Creamos el reporte
-	comando.Mkuser(usuarioActual.PartID, &particionesMontadas)
+	comando.Mkuser(usuarioActual.PartID, &particionesMontadas, w)
 }
 
-func analizarRmusr(parametros string) {
+func analizarRmusr(parametros string, w *estructuras.Mensaje) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Rmusr
 	for parametros != "" {
@@ -512,10 +512,10 @@ func analizarRmusr(parametros string) {
 	}
 
 	//Creamos el reporte
-	comando.Rmusr(usuarioActual.PartID, &particionesMontadas)
+	comando.Rmusr(usuarioActual.PartID, &particionesMontadas, w)
 }
 
-func Analizar(comando string) {
+func Analizar(comando string, mensaje *estructuras.Mensaje) {
 	// Lógica de análisis del comando aquí
 	token := strings.TrimSpace(strings.SplitN(comando, " ", 2)[0])
 	parametros := strings.TrimSpace(strings.SplitN(comando, " ", 2)[1])
@@ -523,41 +523,55 @@ func Analizar(comando string) {
 		fmt.Println("Saliendo...")
 	} else if token == "mkdisk" {
 		fmt.Println("Creando disco...")
-		analizarMkdisk(parametros)
+		mensaje.Accion = "Creando disco..."
+		analizarMkdisk(parametros, mensaje)
 	} else if token == "rmdisk" {
 		fmt.Println("Eliminando disco...")
-		analizarRmdisk(parametros)
+		mensaje.Accion = "Eliminando disco..."
+		analizarRmdisk(parametros, mensaje)
 	} else if token == "fdisk" {
 		fmt.Println("Creando partición...")
-		analizarFdisk(parametros)
+		mensaje.Accion = "Creando partición..."
+		analizarFdisk(parametros, mensaje)
 	} else if token == "mount" {
 		fmt.Println("Montando partición...")
-		analizarMount(parametros)
+		mensaje.Accion = "Montando partición..."
+		analizarMount(parametros, mensaje)
 	} else if token == "mkfs" {
 		fmt.Println("Creando sistema de archivos...")
-		analizarMKFS(parametros)
+		mensaje.Accion = "Creando sistema de archivos..."
+		analizarMKFS(parametros, mensaje)
 	} else if token == "rep" {
 		fmt.Println("Creando reporte...")
-		analizarREP(parametros)
+		mensaje.Accion = "Creando reporte..."
+		analizarREP(parametros, mensaje)
 	} else if token == "login" {
 		fmt.Println("Iniciando sesión...")
-		analizarLogin(parametros)
+		mensaje.Accion = "Iniciando sesión..."
+		analizarLogin(parametros, mensaje)
 	} else if token == "logout" {
 		fmt.Println("Cerrando sesión...")
+		mensaje.Accion = "Cerrando sesión..."
 		analizarLogout()
 	} else if token == "mkgrp" {
 		fmt.Println("Creando grupo...")
-		analizarMkgrp(parametros)
+		mensaje.Accion = "Creando grupo..."
+		analizarMkgrp(parametros, mensaje)
 	} else if token == "rmgrp" {
 		fmt.Println("Eliminando grupo...")
-		analizarRmgrp(parametros)
+		mensaje.Accion = "Eliminando grupo..."
+		analizarRmgrp(parametros, mensaje)
 	} else if token == "mkusr" {
 		fmt.Println("Creando usuario...")
-		analizarMkuser(parametros)
+		mensaje.Accion = "Creando usuario..."
+		analizarMkuser(parametros, mensaje)
 	} else if token == "rmusr" {
 		fmt.Println("Eliminando usuario...")
-		analizarRmusr(parametros)
+		mensaje.Accion = "Eliminando usuario..."
+		analizarRmusr(parametros, mensaje)
 	} else {
 		fmt.Println("Comando no reconocido")
+		mensaje.Accion = "Comando no reconocido"
+
 	}
 }

@@ -23,11 +23,12 @@ func (mount *Mount) CrearId(lista *estructuras.ListaParticionesMontadas, partici
 }
 
 // Función para reescribir el status de una partición
-func (mount *Mount) ReescribirStatus() {
+func (mount *Mount) ReescribirStatus(mensaje *estructuras.Mensaje) {
 	// Abrimos el archivo
 	file, err := os.OpenFile(mount.Path, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println(err)
+		mensaje.Mensaje = "Error al abrir el archivo"
 	}
 	defer file.Close()
 	// Leemos el MBR
@@ -46,11 +47,12 @@ func (mount *Mount) ReescribirStatus() {
 	}
 }
 
-func (mount *Mount) MountCommand(lista *estructuras.ListaParticionesMontadas) {
+func (mount *Mount) MountCommand(lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	mount.ListaMontadas = lista
 	id := mount.CrearId(lista, *mount)
 	if mount.ListaMontadas.ObtenerParticionMontada(id) != nil {
 		fmt.Println("La partición ya está montada")
+		mensaje.Mensaje = "La partición ya está montada"
 	} else {
 		nuevaParticionMontada := &estructuras.ParticionMontada{
 			Id:            id,
@@ -65,7 +67,8 @@ func (mount *Mount) MountCommand(lista *estructuras.ListaParticionesMontadas) {
 			Montada:       true,
 		}
 		mount.ListaMontadas.AgregarParticionMontada(nuevaParticionMontada)
-		mount.ReescribirStatus()
+		mount.ReescribirStatus(mensaje)
 		fmt.Println("Partición montada con éxito")
+		mensaje.Mensaje = "Partición montada con éxito"
 	}
 }

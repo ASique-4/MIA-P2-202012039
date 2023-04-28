@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"proyecto2/analizador"
+	"proyecto2/estructuras"
 	"strings"
 )
 
@@ -22,6 +23,8 @@ func LeerEntrada() string {
 type Comando struct {
 	Comando string `json:"comando"`
 }
+
+var mensaje estructuras.Mensaje
 
 func handleComando(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
@@ -42,12 +45,13 @@ func handleComando(w http.ResponseWriter, r *http.Request) {
 
 	// Responder con un mensaje de éxito
 	w.WriteHeader(http.StatusOK)
-	jsonOk := "{\"mensaje\": \"Comando recibido\"}"
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(jsonOk))
 
-	// Analizar el comando
-	analizador.Analizar(comandoString)
+	listaComandos := strings.Split(comandoString, "\n")
+	for comando := range listaComandos {
+		analizador.Analizar(listaComandos[comando], &mensaje)
+	}
+
+	json.NewEncoder(w).Encode(mensaje)
 
 }
 

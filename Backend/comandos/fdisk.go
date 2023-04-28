@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
-
 	"proyecto2/estructuras"
 )
 
@@ -24,6 +23,8 @@ type EspacioLibre struct {
 	tamaño   int64
 	partcion *estructuras.Particion
 }
+
+var mensajeTmp *estructuras.Mensaje
 
 func calcularEspaciosLibres(mbr *estructuras.MBR) []EspacioLibre {
 	// Creamos un slice para almacenar los espacios libres
@@ -251,6 +252,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 			// Si la partición no es valida, retornamos
 			if particionLibre == nil {
 				fmt.Println("No se encontró una partición libre.")
+				mensajeTmp.Mensaje = "No se encontró una partición libre."
 				return
 			}
 
@@ -267,6 +269,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		// Verificamos si existe una partición extendida
 		if getParticionExtendida(mbr) != nil {
 			fmt.Println("Ya existe una partición extendida.")
+			mensajeTmp.Mensaje = "Ya existe una partición extendida."
 			return
 		}
 
@@ -276,6 +279,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		// Si la partición no es valida, retornamos
 		if particionLibre == nil {
 			fmt.Println("No se encontró una partición libre.")
+			mensajeTmp.Mensaje = "No se encontró una partición libre."
 			return
 		}
 
@@ -294,6 +298,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		// Si la partición no es valida, retornamos
 		if particionExtendida == nil {
 			fmt.Println("No se encontró una partición extendida.")
+			mensajeTmp.Mensaje = "No se encontró una partición extendida."
 			return
 		}
 
@@ -301,6 +306,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		file, err := os.OpenFile(path, os.O_RDWR, 0666)
 		if err != nil {
 			fmt.Println("Error al abrir el archivo.")
+			mensajeTmp.Mensaje = "Error al abrir el archivo."
 			return
 		}
 
@@ -335,6 +341,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		// Verificamos si hay espacio para la partición
 		if espacioOcupado+int(tamanio) > tamaño {
 			fmt.Println("No hay espacio para la partición.")
+			mensajeTmp.Mensaje = "No hay espacio para la partición."
 			return
 		}
 
@@ -378,6 +385,7 @@ func peorAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path stri
 	// Si el índice es -1, no se encontró un espacio libre que cumpla con la condición
 	if index == -1 {
 		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
+		mensajeTmp.Mensaje = "No se encontró un espacio libre que cumpla con la condición."
 	} else {
 		// Si el índice es válido, creamos la partición
 		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
@@ -398,6 +406,7 @@ func primerAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path st
 	// Si el índice es -1, no se encontró un espacio libre que cumpla con la condición
 	if index == -1 {
 		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
+		mensajeTmp.Mensaje = "No se encontró un espacio libre que cumpla con la condición."
 	} else {
 		// Si el índice es válido, creamos la partición
 		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
@@ -418,6 +427,7 @@ func mejorAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path str
 	// Si el índice es -1, no se encontró un espacio libre que cumpla con la condición
 	if index == -1 {
 		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
+		mensajeTmp.Mensaje = "No se encontró un espacio libre que cumpla con la condición."
 	} else {
 		// Si el índice es válido, creamos la partición
 		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
@@ -484,6 +494,7 @@ func agregarParticionAlMBR(mbr *estructuras.MBR, particion estructuras.Particion
 	// Verificamos si existe una partición con el mismo nombre
 	if existeNombreParticion(*mbr, particion.Part_name, path) {
 		fmt.Println("Ya existe una partición con el mismo nombre.")
+		mensajeTmp.Mensaje = "Ya existe una partición con el mismo nombre."
 		return
 	}
 	if particion.Part_fit[0] == 'B' {
@@ -578,13 +589,8 @@ func intToBytes(n int) [4]byte {
 }
 
 // Función para crear una partición
-func CrearParticion(particion Fdisk) {
-	fmt.Println("Size:", bytesToInt(particion.Size))
-	fmt.Println("Path:", particion.Path)
-	fmt.Println("Unit:", particion.Unit)
-	fmt.Println("Type:", particion.Type)
-	fmt.Println("Fit:", particion.Fit)
-	fmt.Println("Name:", string(particion.Name[:]))
+func CrearParticion(particion Fdisk, mensaje *estructuras.Mensaje) {
+	mensajeTmp = mensaje
 
 	//Si el path tiene comillas, las quitamos
 	if particion.Path[0] == '"' {
@@ -594,6 +600,7 @@ func CrearParticion(particion Fdisk) {
 	//Verificamos si el path existe
 	if _, err := os.Stat(particion.Path); os.IsNotExist(err) {
 		fmt.Println("¡Error! No existe el disco. Lo siento, parece que no soy tan hábil como pensaba.")
+		mensajeTmp.Mensaje = "¡Error! No existe el disco. Lo siento, parece que no soy tan hábil como pensaba."
 		return
 	}
 
@@ -626,6 +633,7 @@ func CrearParticion(particion Fdisk) {
 	file, err := os.OpenFile(particion.Path, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println("¡Error! No se pudo abrir el archivo. Lo siento, parece que no soy tan hábil como pensaba.")
+		mensajeTmp.Mensaje = "¡Error! No se pudo abrir el archivo. Lo siento, parece que no soy tan hábil como pensaba."
 		return
 	}
 
@@ -634,6 +642,7 @@ func CrearParticion(particion Fdisk) {
 	err = binary.Read(file, binary.LittleEndian, &mbr)
 	if err != nil {
 		fmt.Println("¡Error! No se pudo leer el archivo. Lo siento, parece que no soy tan hábil como pensaba.")
+		mensajeTmp.Mensaje = "¡Error! No se pudo leer el archivo. Lo siento, parece que no soy tan hábil como pensaba."
 		return
 	}
 
@@ -647,6 +656,7 @@ func CrearParticion(particion Fdisk) {
 	err = binary.Write(file, binary.LittleEndian, &mbr)
 	if err != nil {
 		fmt.Println("¡Error! No se pudo escribir el archivo. Lo siento, parece que no soy tan hábil como pensaba.")
+		mensajeTmp.Mensaje = "¡Error! No se pudo escribir el archivo. Lo siento, parece que no soy tan hábil como pensaba."
 		return
 	}
 
@@ -654,22 +664,6 @@ func CrearParticion(particion Fdisk) {
 	file.Close()
 
 	fmt.Println("¡Partición creada con éxito!")
-
-	//Lee el MBR
-	file, err = os.OpenFile(particion.Path, os.O_RDWR, 0666)
-	if err != nil {
-		fmt.Println("¡Error! No se pudo abrir el archivo. Lo siento, parece que no soy tan hábil como pensaba.")
-		return
-	}
-
-	//Leemos el MBR
-	err = binary.Read(file, binary.LittleEndian, &mbr)
-	if err != nil {
-		fmt.Println("¡Error! No se pudo leer el archivo. Lo siento, parece que no soy tan hábil como pensaba.")
-		return
-	}
-
-	//Imprimimos el MBR
-	ImprimirMBR(mbr, particion.Path)
+	mensajeTmp.Mensaje = "¡Partición creada con éxito!"
 
 }

@@ -22,11 +22,12 @@ func stringToInt(str string) int {
 	return num
 }
 
-func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas) {
+func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	// Obtener la partición montada
 	particionMontada := lista.ObtenerParticionMontada(id)
 	if particionMontada == nil {
 		fmt.Println("No se encontró la partición montada")
+		mensaje.Mensaje = "No se encontró la partición montada"
 		return
 	}
 
@@ -34,6 +35,7 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 	filePart, err := os.OpenFile(particionMontada.Path, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println(err)
+		mensaje.Mensaje = "Error al abrir el archivo"
 		return
 	}
 	defer filePart.Close()
@@ -95,11 +97,13 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 			}
 			if len(lineaSplit) < 3 {
 				fmt.Println("Error en el archivo users.txt")
+				mensaje.Mensaje = "Error en el archivo users.txt"
 				break
 			}
 			if strings.TrimSpace(lineaSplit[1]) == "G" {
 				if mkgrp.Name == strings.TrimSpace(lineaSplit[2]) {
 					fmt.Println("Ya existe un grupo con ese nombre")
+					mensaje.Mensaje = "Ya existe un grupo con ese nombre"
 					return
 				}
 				// Verificamos si es el ultimo grupo
@@ -124,7 +128,10 @@ func (mkgrp *Mkgrp) Mkgrp(id string, lista *estructuras.ListaParticionesMontadas
 	err = binary.Write(filePart, binary.LittleEndian, &lineaCopia)
 	if err != nil {
 		fmt.Println(err)
+		mensaje.Mensaje = "Error al escribir el archivo users.txt"
 		return
 	}
+
+	mensaje.Mensaje = "Grupo creado correctamente"
 
 }
