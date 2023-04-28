@@ -37,7 +37,7 @@ function FileContent() {
   
       const salida = document.getElementById('salida');
     
-      fetch('http://localhost:8080/ejecutar-comando', options)
+      fetch('http://52.91.77.62/ejecutar-comando', options)
         .then(response => response.json())
         .then(response => salida.innerText += '======   ' + response.accion + '   ======\n' + response.mensaje + '\n')
         .catch(err => console.error(err));
