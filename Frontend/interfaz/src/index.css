@@ -16,18 +16,19 @@ code {
     monospace;
 }
 
+/* Scroll */
 *::-webkit-scrollbar {
-  width: 5px;               /* width of the entire scrollbar */
+  width: 5px;              
 }
 
 *::-webkit-scrollbar-track {
-  background: #D1D8EC;        /* color of the tracking area */
+  background: #D1D8EC;       
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #b2b8c9;    /* color of the scroll thumb */
-  border-radius: 30px;       /* roundness of the scroll thumb */
-  border: 3px solid #b2b8c9;  /* creates padding around scroll thumb */
+  background-color: #b2b8c9;    
+  border-radius: 30px;       
+  border: 3px solid #b2b8c9;  
 }
 
 /* Contenido del archivo */
@@ -38,9 +39,7 @@ pre {
   -webkit-box-shadow: 12px 12px 24px #b2b8c9, -12px -12px 24px #f0f8ff;
   box-shadow: 12px 12px 24px #b2b8c9, -12px -12px 24px #f0f8ff;
   padding: 20px;
-  margin: 40px;
-  /* scroll invisible */
-  
+  margin: 40px;  
 }
 
 .Procesar {
@@ -129,4 +128,38 @@ input[type="file"] {
 
 .Limpiar:active {
   transform: scale(0.9);
+}
+
+.loginEnviar {
+  position: relative;
+  display: inline-block;
+  margin: 15px;
+  padding: 15px 30px;
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-decoration: none;
+  color: #000;
+  background: #9BA4B5;
+  cursor: pointer;
+  transition: ease-out 0.5s;
+  border: 2px solid #9BA4B5;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 0 #9BA4B5;
+}
+
+.loginEnviar:hover {
+  color: white;
+  box-shadow: inset 0 -100px 0 0 #394867;
+  border: 2px solid #394867;
+}
+
+.loginEnviar:active {
+  transform: scale(0.9);
+}
+
+.glass {
+  background: #D1D8EC;
+  box-shadow: 12px 12px 24px #b2b8c9, -12px -12px 24px #f0f8ff;
+  padding: 20px;
 }
