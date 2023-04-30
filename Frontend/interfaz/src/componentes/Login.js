@@ -4,12 +4,14 @@ import ComplexNavbar from "./NavBar";
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [id, setId] = useState("");
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const requestData = {
       username: username,
       password: password,
+      id: id
     };
     console.log(requestData);
 
@@ -18,7 +20,7 @@ const Login = () => {
       body: JSON.stringify(requestData), // Convertir a cadena JSON
     };
 
-    fetch("http://52.91.77.62/login", options)
+    fetch("http://35.171.22.226/login", options)
       .then((response) => response.json())
       .catch((err) => console.error(err));
   };
@@ -32,6 +34,22 @@ const Login = () => {
             className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 glass"
             onSubmit={handleSubmit}
           >
+            <div className="mb-4">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="is"
+              >
+                Id
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="id"
+                type="text"
+                placeholder="39XX"
+                value={id}
+                onChange={(e) => setId(e.target.value)}
+              />
+            </div>
             <div className="mb-4">
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"

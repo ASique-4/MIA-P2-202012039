@@ -163,3 +163,82 @@ input[type="file"] {
   box-shadow: 12px 12px 24px #b2b8c9, -12px -12px 24px #f0f8ff;
   padding: 20px;
 }
+
+.Aceptar {
+  position: relative;
+  display: inline-block;
+  margin: 15px;
+  padding: 15px 30px;
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-decoration: none;
+  color: #000;
+  background: #9BA4B5;
+  cursor: pointer;
+  transition: ease-out 0.5s;
+  border: 2px solid #9BA4B5;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 0 #9BA4B5;
+}
+
+.Aceptar:hover {
+  color: white;
+  box-shadow: inset 0 -100px 0 0 #539165;
+  border: 2px solid #539165;
+}
+
+.Aceptar:active {
+  transform: scale(0.9);
+}
+
+.Rechazar {
+  position: relative;
+  display: inline-block;
+  margin: 15px;
+  padding: 15px 30px;
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-decoration: none;
+  color: #000;
+  background: #9BA4B5;
+  cursor: pointer;
+  transition: ease-out 0.5s;
+  border: 2px solid #9BA4B5;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 0 #9BA4B5;
+}
+
+.Rechazar:hover {
+  color: white;
+  box-shadow: inset 0 -100px 0 0 #DF2E38;
+  border: 2px solid #DF2E38;
+}
+
+.Rechazar:active {
+  transform: scale(0.9);
+}
+
+/*Neo Brutalism pricing card*/
+.popup-content {
+  width: 190px;
+  height: 150px;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: .5vmin solid #05060f;
+  box-shadow: .4rem .4rem #05060f;
+  overflow: hidden;
+}
+
+/*Card content*/
+.modal {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: 1rem;
+  color: #212A3E;
+}
+
+

@@ -44,13 +44,34 @@ func handleComando(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Comando recibido:", comandoString)
 
 	// Responder con un mensaje de éxito
-	w.WriteHeader(http.StatusOK)
 
 	listaComandos := strings.Split(comandoString, "\n")
 	for comando := range listaComandos {
 		analizador.Analizar(listaComandos[comando], &mensaje)
 	}
 
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(mensaje)
+
+}
+
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+
+	// Guardamos el json en una estructura
+	var usuario estructuras.Usuario
+	err := json.NewDecoder(r.Body).Decode(&usuario)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Realizar el login
+	comando := "login >user=" + usuario.Username + " >pwd=" + usuario.Password + " >id=" + usuario.Id
+
+	analizador.Analizar(comando, &mensaje)
+
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(mensaje)
 
 }

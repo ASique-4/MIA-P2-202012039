@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
+import PopupComponent  from './Popup';
 
 function FileContent() {
   const [fileContent, setFileContent] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
+
+  const handleOpenPopup = () => {
+    setShowPopup(true);
+  };
+
+  const handleAccept = () => {
+    console.log('Popup accepted');
+  };
+
+  const handleReject = () => {
+    console.log('Popup rejected');
+  };
+
+
 
   const handleFileRead = (e) => {
     const content = e.target.result;
@@ -13,6 +29,12 @@ function FileContent() {
     fileReader.onloadend = handleFileRead;
     fileReader.readAsText(file);
   }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+
   
   // Enviar archivo al servidor
   const handleButtonClick = () => {
@@ -24,7 +46,19 @@ function FileContent() {
 
     // Para cada linea se envia al servidor
     lineas.forEach(linea => {
+      const salida = document.getElementById('salida');
       console.log(linea);
+      // Si es un comentario
+      if (linea.startsWith('#')) {
+        salida.innerText += linea + '\n';
+        return;
+      }
+
+      // Si es una linea vacia
+      if (linea === '') {
+        return;
+      }
+
       const requestData = {
         comando: linea
       };
@@ -35,11 +69,11 @@ function FileContent() {
         body: JSON.stringify(requestData) // Convertir a cadena JSON
       };
   
-      const salida = document.getElementById('salida');
     
-      fetch('http://52.91.77.62/ejecutar-comando', options)
+      fetch('http://localhost:8080/ejecutar-comando', options)
         .then(response => response.json())
-        .then(response => salida.innerText += '======   ' + response.accion + '   ======\n' + response.mensaje + '\n')
+        .then(response => response.accion === "pause" ? handleOpenPopup() : (salida.innerText += '======   ' + response.accion + '   ======\n' + response.mensaje + '\n'))
+        .then(sleep(1000))
         .catch(err => console.error(err));
     }
     );
@@ -49,6 +83,12 @@ function FileContent() {
 
   return (
     <div>
+      <PopupComponent
+        openPopup={showPopup}
+        onAccept={handleAccept}
+        onReject={handleReject}
+        title='El servidor se encuentra en pausa'
+      />
       <label htmlFor="file-upload" className='custom-file-upload'>
         <i className="fa fa-cloud-upload"></i> Subir Archivo
       </label>

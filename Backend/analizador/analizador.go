@@ -516,6 +516,14 @@ func analizarRmusr(parametros string, w *estructuras.Mensaje) {
 }
 
 func Analizar(comando string, mensaje *estructuras.Mensaje) {
+	//Si es pause
+	if comando == "pause" {
+		fmt.Println("Pausado...")
+		mensaje.Mensaje = "Pausado..."
+		mensaje.Accion = "pause"
+		return
+	}
+
 	// Lógica de análisis del comando aquí
 	token := strings.TrimSpace(strings.SplitN(comando, " ", 2)[0])
 	parametros := strings.TrimSpace(strings.SplitN(comando, " ", 2)[1])
