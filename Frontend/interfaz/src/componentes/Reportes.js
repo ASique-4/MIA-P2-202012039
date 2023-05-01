@@ -6,7 +6,7 @@ function Reportes() {
   return (
     <div>
       <center>
-        <div className="w-full max-w-xs" style={{ margin: "100px" }}>
+        <div className="w-full max-w-xs bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 glass" style={{ margin: "100px" }}>
           <h1 className="block text-gray-700 text-6xl font-bold mb-2">
             Reportes
           </h1>

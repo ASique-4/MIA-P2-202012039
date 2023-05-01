@@ -1,8 +1,13 @@
 package comandos
 
 import (
+	"bufio"
+	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -76,14 +81,14 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje 
 	nombreDelArchivo := strings.Split(path.Base(particionMontada.Path), ".")[0]
 
 	// Creamos el directorio si no existe
-	if _, err := os.Stat("/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img" + directorio); os.IsNotExist(err) {
-		os.MkdirAll("/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+directorio, 0777)
+	if _, err := os.Stat(directorio); os.IsNotExist(err) {
+		os.MkdirAll(directorio, 0777)
 	}
 
 	// path con extensión .dot
 	dot := strings.Split(rep.Path, ".")[0] + ".dot"
 	// Creamos el archivo
-	fileDot, err := os.Create("/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img" + dot)
+	fileDot, err := os.Create(dot)
 	if err != nil {
 		fmt.Println("Error al crear el archivo")
 		mensaje.Mensaje = "Error al crear el archivo"
@@ -174,17 +179,18 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje 
 	// Generamos el reporte
 	// Obtenemos la extensión
 	extension := strings.Split(rep.Path, ".")[1]
+
 	if extension == "png" {
 		// Generamos el png
-		cmd := exec.Command("dot", "-Tpng", dot, "-o", "/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+rep.Path)
+		cmd := exec.Command("dot", "-Tpng", dot, "-o", rep.Path)
 		cmd.Run()
 	} else if extension == "pdf" {
 		// Generamos el pdf
-		cmd := exec.Command("dot", "-Tpdf", dot, "-o", "/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+rep.Path)
+		cmd := exec.Command("dot", "-Tpdf", dot, "-o", rep.Path)
 		cmd.Run()
 	} else if extension == "jpg" {
 		// Generamos el jpg
-		cmd := exec.Command("dot", "-Tjpg", "/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+dot, "-o", "/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+rep.Path)
+		cmd := exec.Command("dot", "-Tjpg", dot, "-o", rep.Path)
 		fmt.Println(cmd)
 		cmd.Run()
 		err := cmd.Run()
@@ -193,8 +199,55 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje 
 		fmt.Println("No se reconoce la extensión")
 		mensaje.Mensaje = "No se reconoce la extensión"
 	}
+	bas64Json.Base64 = imageToBase64(rep.Path)
+	bas64Json.Reporte = "DISK"
+
+	http.HandleFunc("/base64", handleBase64)
+	go func() {
+		log.Fatal(http.ListenAndServe(":3030", nil))
+	}()
 
 	mensaje.Mensaje = "Reporte DISK generado con éxito"
+}
+
+type Base64Json struct {
+	Reporte string `json:"reporte"`
+	Base64  string `json:"base64"`
+}
+
+var bas64Json Base64Json
+
+func handleBase64(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(bas64Json)
+}
+
+func imageToBase64(path string) string {
+	// Abrimos el archivo
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Println("Error al abrir el archivo")
+		return ""
+	}
+	defer file.Close()
+
+	// Leemos el archivo
+	fileInfo, _ := file.Stat()
+	var size int64 = fileInfo.Size()
+	bytes := make([]byte, size)
+
+	// Leemos el archivo
+	buffer := bufio.NewReader(file)
+	_, err = buffer.Read(bytes)
+
+	// Codificamos a base64
+	encodedString := base64.StdEncoding.EncodeToString(bytes)
+
+	return encodedString
 }
 
 func reorteSP(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {

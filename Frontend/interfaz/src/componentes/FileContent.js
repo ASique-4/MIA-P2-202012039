@@ -67,17 +67,14 @@ function FileContent() {
 
   }
 
-  const obtenerRutaReporte = (requestData) => {
-    // Se obtiene la ruta del reporte
-    // El comando es de la forma: rep >id=061A >Path=/home/user/reports/reporte1.jpg >name=mbr
-    // Se separa el comando por el caracter '>' para obtener cada uno de los parametros
-    const comando = requestData.comando;
-    const comandoSeparado = comando.split('>');
-    // Se obtiene el parametro 'Path' sin importar el orden en que se envie
-    const parametroPath = comandoSeparado.find(parametro => parametro.includes('Path'));
-    // Se obtiene el valor del parametro 'Path'
-    const valorPath = parametroPath.split('=')[1];
-    return valorPath;
+  const obtenerRutaReporte = () => {
+    // Hacer una solicitud GET al servidor para obtener la ruta del reporte
+    fetch('http://localhost:3030/base64')
+      .then(response => response.json())
+      .then(response => {
+        console.log(response);
+        localStorage.setItem('base' + response.reporte, response.base64);
+      })
   }
 
   const imprimirConsola = (accion, mensaje) => {
@@ -133,20 +130,10 @@ function FileContent() {
             } else if (response.accion === 'Eliminando disco...') {
               setPopupTitle('¿Está seguro de que desea eliminar el disco?');
               handleOpenPopup();
-            } else if (response.mensaje === 'Reporte DISK generado con éxito') {
-              console.log('rutaDISK');
-              localStorage.setItem('rutaDISK', obtenerRutaReporte(requestData));
+            } else if (response.accion === 'Creando reporte...') {
+              obtenerRutaReporte();
               imprimirConsola(response.accion, response.mensaje);
-            } else if (response.mensaje === 'Reporte TREE generado con éxito') {
-              localStorage.setItem('rutaTREE', obtenerRutaReporte(requestData));
-              imprimirConsola(response.accion, response.mensaje);
-            } else if (response.mensaje === 'Reporte FILE generado con éxito') {
-              localStorage.setItem('rutaSB', obtenerRutaReporte(requestData));
-              imprimirConsola(response.accion, response.mensaje);
-            } else if (response.accion === 'Reporte SB generado con éxito') {
-              localStorage.setItem('rutaSB', obtenerRutaReporte(requestData));
-              imprimirConsola(response.accion, response.mensaje);
-            } else {
+                } else {
               imprimirConsola(response.accion, response.mensaje);
             }
           })
