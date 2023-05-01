@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from './componentes/Login';
 import Reportes from './componentes/Reportes';
 import ComplexNavbar from './componentes/NavBar';
+import MostrarReportes from './componentes/mostrarReporte';
 
 
 export default function Index() {
@@ -21,6 +22,7 @@ export default function Index() {
         <Route path="/" element={<App />} />
         <Route path="/reportes" element={<Reportes />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/mostrarReporte" element={<MostrarReportes />} />
       </Routes>
     </BrowserRouter>
   );

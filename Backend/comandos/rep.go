@@ -76,14 +76,14 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje 
 	nombreDelArchivo := strings.Split(path.Base(particionMontada.Path), ".")[0]
 
 	// Creamos el directorio si no existe
-	if _, err := os.Stat(directorio); os.IsNotExist(err) {
-		os.MkdirAll(directorio, 0777)
+	if _, err := os.Stat("/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img" + directorio); os.IsNotExist(err) {
+		os.MkdirAll("/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+directorio, 0777)
 	}
 
 	// path con extensión .dot
 	dot := strings.Split(rep.Path, ".")[0] + ".dot"
 	// Creamos el archivo
-	fileDot, err := os.Create(dot)
+	fileDot, err := os.Create("/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img" + dot)
 	if err != nil {
 		fmt.Println("Error al crear el archivo")
 		mensaje.Mensaje = "Error al crear el archivo"
@@ -176,16 +176,19 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje 
 	extension := strings.Split(rep.Path, ".")[1]
 	if extension == "png" {
 		// Generamos el png
-		cmd := exec.Command("dot", "-Tpng", dot, "-o", rep.Path)
+		cmd := exec.Command("dot", "-Tpng", dot, "-o", "/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+rep.Path)
 		cmd.Run()
 	} else if extension == "pdf" {
 		// Generamos el pdf
-		cmd := exec.Command("dot", "-Tpdf", dot, "-o", rep.Path)
+		cmd := exec.Command("dot", "-Tpdf", dot, "-o", "/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+rep.Path)
 		cmd.Run()
 	} else if extension == "jpg" {
 		// Generamos el jpg
-		cmd := exec.Command("dot", "-Tjpg", dot, "-o", rep.Path)
+		cmd := exec.Command("dot", "-Tjpg", "/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+dot, "-o", "/home/angel/Documents/Archivos/Proyecto2/Frontend/interfaz/public/img"+rep.Path)
+		fmt.Println(cmd)
 		cmd.Run()
+		err := cmd.Run()
+		fmt.Println(err)
 	} else {
 		fmt.Println("No se reconoce la extensión")
 		mensaje.Mensaje = "No se reconoce la extensión"

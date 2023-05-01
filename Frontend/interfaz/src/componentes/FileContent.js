@@ -80,10 +80,10 @@ function FileContent() {
     return valorPath;
   }
 
-  const imprimirConsola = (response) => {
+  const imprimirConsola = (accion, mensaje) => {
     const salida = document.getElementById('salida');
-    salida.innerText += "=======> " + response.accion + " <=======\n";
-    salida.innerText += response.mensaje + '\n';
+    salida.innerText += "=======> " + accion + " <=======\n";
+    salida.innerText += mensaje + '\n';
   }
 
 
@@ -136,18 +136,18 @@ function FileContent() {
             } else if (response.mensaje === 'Reporte DISK generado con éxito') {
               console.log('rutaDISK');
               localStorage.setItem('rutaDISK', obtenerRutaReporte(requestData));
-              imprimirConsola(response);
+              imprimirConsola(response.accion, response.mensaje);
             } else if (response.mensaje === 'Reporte TREE generado con éxito') {
               localStorage.setItem('rutaTREE', obtenerRutaReporte(requestData));
-              imprimirConsola(response);
+              imprimirConsola(response.accion, response.mensaje);
             } else if (response.mensaje === 'Reporte FILE generado con éxito') {
               localStorage.setItem('rutaSB', obtenerRutaReporte(requestData));
-              imprimirConsola(response);
+              imprimirConsola(response.accion, response.mensaje);
             } else if (response.accion === 'Reporte SB generado con éxito') {
               localStorage.setItem('rutaSB', obtenerRutaReporte(requestData));
-              imprimirConsola(response);
+              imprimirConsola(response.accion, response.mensaje);
             } else {
-              imprimirConsola(response);
+              imprimirConsola(response.accion, response.mensaje);
             }
           })
           .catch(err => console.error(err));

@@ -1,0 +1,23 @@
+digraph G {
+labelloc="t";
+label="Disco1";
+parent [
+shape=plaintext
+label=<
+<table border="1" cellborder="1">
+<tr><td rowspan="3" bgcolor='#0E8388'>MBR</td>
+<td rowspan="3" bgcolor='#0E8388'>PRIMARIA<br /> 10.000000%</td>
+<td rowspan="3" bgcolor='#0E8388'>PRIMARIA<br /> 10.000000%</td>
+<td rowspan="3" bgcolor='#0E8388'>PRIMARIA<br /> 10.000000%</td>
+<td rowspan="3" bgcolor='#0E8388'>LIBRE<br /> 60.000000%</td>
+<td rowspan="1" colspan="4" bgcolor='#0E8388'>EXTENDIDA</td>
+</tr>
+<tr>
+<td rowspan="2" bgcolor='#0E8388'>EBR</td>
+<td rowspan="2" bgcolor='#0E8388'>LOGICA<br /> 3.333333%</td>
+<td rowspan="2" bgcolor='#0E8388'>EBR</td>
+<td rowspan="2" bgcolor='#0E8388'>LOGICA<br /> 3.333333%</td>
+</tr>
+</table>>
+];
+}
