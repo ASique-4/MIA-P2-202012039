@@ -18,8 +18,28 @@ type Mkdisk struct {
 	MBR  estructuras.MBR
 }
 
+const bufferSize = 4 * 1024 // Tamaño del búfer de escritura (4 KB)
+
+func llenarArchivoConCeros(archivo *os.File, tamanio int64) error {
+	buffer := make([]byte, bufferSize)
+
+	for i := int64(0); i < tamanio; i += int64(bufferSize) {
+		n := bufferSize
+		if tamanio-i < int64(bufferSize) {
+			n = int(tamanio - i)
+		}
+
+		if _, err := archivo.Write(buffer[:n]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Función para crear un disco
 func CrearDiscos(disco Mkdisk, mensaje *estructuras.Mensaje) {
+	mensaje.Accion = "Creando disco..."
 	//Guardamos el nombre del disco
 	nombre := disco.Path[strings.LastIndex(disco.Path, "/")+1:]
 	// Verificamos si el path existe y si no lo creamos
@@ -71,14 +91,9 @@ func CrearDiscos(disco Mkdisk, mensaje *estructuras.Mensaje) {
 	fmt.Println("Fit:", disco.MBR.Dsk_fit[0])
 
 	//Llenamos el archivo con 0
-	for i := int64(0); i < tamanio; i++ {
-		var c byte = 0
-		if err := binary.Write(archivo, binary.LittleEndian, &c); err != nil {
-			fmt.Println("¡Error! Fallé al llenar el archivo con 0. Lo siento, parece que no soy tan hábil como pensaba.")
-			mensaje.Mensaje = "Error. No se pudo llenar el archivo con 0."
-			archivo.Close()
-			return
-		}
+	if err := llenarArchivoConCeros(archivo, tamanio); err != nil {
+		fmt.Println("¡Error! Fallé al llenar el archivo con ceros:", err)
+		return
 	}
 
 	archivo.Seek(0, 0)
@@ -90,9 +105,9 @@ func CrearDiscos(disco Mkdisk, mensaje *estructuras.Mensaje) {
 		archivo.Close()
 		return
 	}
+	mensaje.Mensaje = "Disco creado correctamente."
 
 	archivo.Close()
 	fmt.Println("¡Presto! Disco creado correctamente.")
-	mensaje.Mensaje = "Disco creado correctamente."
 
 }

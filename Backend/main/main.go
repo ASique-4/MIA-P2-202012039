@@ -10,6 +10,7 @@ import (
 	"proyecto2/analizador"
 	"proyecto2/estructuras"
 	"strings"
+	"time"
 )
 
 func LeerEntrada() string {
@@ -42,13 +43,11 @@ func handleComando(w http.ResponseWriter, r *http.Request) {
 	// Realizar cualquier otra operación con el comando
 
 	fmt.Println("Comando recibido:", comandoString)
-
+	time.Sleep(5 * time.Second)
 	// Responder con un mensaje de éxito
+	analizador.Analizar(comandoString, &mensaje)
 
-	listaComandos := strings.Split(comandoString, "\n")
-	for comando := range listaComandos {
-		analizador.Analizar(listaComandos[comando], &mensaje)
-	}
+	fmt.Println("Mensaje enviado:", mensaje)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(mensaje)
