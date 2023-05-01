@@ -11,7 +11,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function Example({ username, password }) {
+export default function Example({username}) {
   // Si no se ha iniciado sesión, se muestra el botón de iniciar sesión
   let message = (
     <a
@@ -22,7 +22,7 @@ export default function Example({ username, password }) {
     </a>
   );
 
-  if (username.trim() !== "") {
+  if (username !== null && username.trim() !== "") {
     message = `Bienvenido, ${username}!`;
   }
 

@@ -67,6 +67,25 @@ function FileContent() {
 
   }
 
+  const obtenerRutaReporte = (requestData) => {
+    // Se obtiene la ruta del reporte
+    // El comando es de la forma: rep >id=061A >Path=/home/user/reports/reporte1.jpg >name=mbr
+    // Se separa el comando por el caracter '>' para obtener cada uno de los parametros
+    const comando = requestData.comando;
+    const comandoSeparado = comando.split('>');
+    // Se obtiene el parametro 'Path' sin importar el orden en que se envie
+    const parametroPath = comandoSeparado.find(parametro => parametro.includes('Path'));
+    // Se obtiene el valor del parametro 'Path'
+    const valorPath = parametroPath.split('=')[1];
+    return valorPath;
+  }
+
+  const imprimirConsola = (response) => {
+    const salida = document.getElementById('salida');
+    salida.innerText += "=======> " + response.accion + " <=======\n";
+    salida.innerText += response.mensaje + '\n';
+  }
+
 
   
   // Enviar archivo al servidor
@@ -109,12 +128,26 @@ function FileContent() {
             console.log(response);
             console.log('prueba');
             if (response.accion === 'pause') {
+              setPopupTitle('Ejecución en pausada');
               handleOpenPopup();
             } else if (response.accion === 'Eliminando disco...') {
+              setPopupTitle('¿Está seguro de que desea eliminar el disco?');
               handleOpenPopup();
+            } else if (response.mensaje === 'Reporte DISK generado con éxito') {
+              console.log('rutaDISK');
+              localStorage.setItem('rutaDISK', obtenerRutaReporte(requestData));
+              imprimirConsola(response);
+            } else if (response.mensaje === 'Reporte TREE generado con éxito') {
+              localStorage.setItem('rutaTREE', obtenerRutaReporte(requestData));
+              imprimirConsola(response);
+            } else if (response.mensaje === 'Reporte FILE generado con éxito') {
+              localStorage.setItem('rutaSB', obtenerRutaReporte(requestData));
+              imprimirConsola(response);
+            } else if (response.accion === 'Reporte SB generado con éxito') {
+              localStorage.setItem('rutaSB', obtenerRutaReporte(requestData));
+              imprimirConsola(response);
             } else {
-              salida.innerText += "=======> " + response.accion + " <=======\n";
-              salida.innerText += response.mensaje + '\n';
+              imprimirConsola(response);
             }
           })
           .catch(err => console.error(err));
@@ -136,7 +169,7 @@ function FileContent() {
       </label>
       <input type='file' id='file-upload' onChange={e => handleFileChosen(e.target.files[0])} />
       <input type='button' value='Ejecutar' id='Procesar' className='Procesar' onClick={e => handleButtonClick()} />
-      <input type="button" value='Limpiar' id='Limpiar' className='Limpiar' onClick={e => {document.getElementById('salida').innerText = ''; document.getElementById('file-content').innerHTML = ''}} />
+      <input type="button" value='Limpiar' id='Limpiar' className='Limpiar' onClick={e => document.getElementById('salida').innerText = ''} />
       <pre 
         id='file-content'
         style={{

@@ -96,6 +96,7 @@ func main() {
 	// Crear un endpoint que reciba el comando a analizar
 	// y devuelva el resultado del analisis
 	http.HandleFunc("/ejecutar-comando", handleComando)
+	http.HandleFunc("/login", handleLogin)
 
 	go func() {
 		if err := http.ListenAndServe(":8080", nil); err != nil {

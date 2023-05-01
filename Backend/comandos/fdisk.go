@@ -25,6 +25,7 @@ type EspacioLibre struct {
 }
 
 var mensajeTmp *estructuras.Mensaje
+var creada bool = true
 
 func calcularEspaciosLibres(mbr *estructuras.MBR) []EspacioLibre {
 	// Creamos un slice para almacenar los espacios libres
@@ -253,6 +254,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 			if particionLibre == nil {
 				fmt.Println("No se encontró una partición libre.")
 				mensajeTmp.Mensaje = "No se encontró una partición libre."
+				creada = false
 				return
 			}
 
@@ -270,6 +272,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		if getParticionExtendida(mbr) != nil {
 			fmt.Println("Ya existe una partición extendida.")
 			mensajeTmp.Mensaje = "Ya existe una partición extendida."
+			creada = false
 			return
 		}
 
@@ -280,6 +283,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		if particionLibre == nil {
 			fmt.Println("No se encontró una partición libre.")
 			mensajeTmp.Mensaje = "No se encontró una partición libre."
+			creada = false
 			return
 		}
 
@@ -299,6 +303,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		if particionExtendida == nil {
 			fmt.Println("No se encontró una partición extendida.")
 			mensajeTmp.Mensaje = "No se encontró una partición extendida."
+			creada = false
 			return
 		}
 
@@ -307,6 +312,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		if err != nil {
 			fmt.Println("Error al abrir el archivo.")
 			mensajeTmp.Mensaje = "Error al abrir el archivo."
+			creada = false
 			return
 		}
 
@@ -342,6 +348,7 @@ func crearParticion(mbr *estructuras.MBR, particion estructuras.Particion, espac
 		if espacioOcupado+int(tamanio) > tamaño {
 			fmt.Println("No hay espacio para la partición.")
 			mensajeTmp.Mensaje = "No hay espacio para la partición."
+			creada = false
 			return
 		}
 
@@ -386,6 +393,7 @@ func peorAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path stri
 	if index == -1 {
 		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
 		mensajeTmp.Mensaje = "No se encontró un espacio libre que cumpla con la condición."
+		creada = false
 	} else {
 		// Si el índice es válido, creamos la partición
 		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
@@ -407,6 +415,7 @@ func primerAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path st
 	if index == -1 {
 		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
 		mensajeTmp.Mensaje = "No se encontró un espacio libre que cumpla con la condición."
+		creada = false
 	} else {
 		// Si el índice es válido, creamos la partición
 		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
@@ -428,6 +437,7 @@ func mejorAjuste(mbr *estructuras.MBR, particion estructuras.Particion, path str
 	if index == -1 {
 		fmt.Println("No se encontró un espacio libre que cumpla con la condición.")
 		mensajeTmp.Mensaje = "No se encontró un espacio libre que cumpla con la condición."
+		creada = false
 	} else {
 		// Si el índice es válido, creamos la partición
 		crearParticion(mbr, particion, espaciosLibres, index, tamañoParticion, path)
@@ -495,6 +505,7 @@ func agregarParticionAlMBR(mbr *estructuras.MBR, particion estructuras.Particion
 	if existeNombreParticion(*mbr, particion.Part_name, path) {
 		fmt.Println("Ya existe una partición con el mismo nombre.")
 		mensajeTmp.Mensaje = "Ya existe una partición con el mismo nombre."
+		creada = false
 		return
 	}
 	if particion.Part_fit[0] == 'B' {
@@ -662,8 +673,9 @@ func CrearParticion(particion Fdisk, mensaje *estructuras.Mensaje) {
 
 	//Cerramos el archivo
 	file.Close()
-
-	fmt.Println("¡Partición creada con éxito!")
-	mensajeTmp.Mensaje = "¡Partición creada con éxito!"
+	if creada {
+		fmt.Println("¡Partición creada con éxito!")
+		mensajeTmp.Mensaje = "¡Partición creada con éxito!"
+	}
 
 }

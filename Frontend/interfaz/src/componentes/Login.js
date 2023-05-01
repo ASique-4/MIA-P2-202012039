@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import ComplexNavbar from "./NavBar";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -20,14 +19,22 @@ const Login = () => {
       body: JSON.stringify(requestData), // Convertir a cadena JSON
     };
 
-    fetch("http://35.171.22.226/login", options)
+    fetch("http://localhost:8080/login", options)
       .then((response) => response.json())
+      .then((response) => {
+        if (response.mensaje === "Login correcto") {
+          alert("Login exitoso");
+          localStorage.setItem("user", username);
+        } else {
+          alert("Login fallido");
+        }
+        // Guardamos usuario en el local storage
+      })
       .catch((err) => console.error(err));
   };
 
   return (
     <div>
-      <ComplexNavbar username={username} password={password} />
       <center>
         <div className="w-full max-w-xs" style={{ marginTop: "100px" }}>
           <form
@@ -77,7 +84,7 @@ const Login = () => {
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
                 id="password"
                 type="password"
-                placeholder="******************"
+                placeholder="*********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

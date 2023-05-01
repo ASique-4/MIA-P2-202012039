@@ -191,7 +191,7 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje 
 		mensaje.Mensaje = "No se reconoce la extensión"
 	}
 
-	mensaje.Mensaje = "Reporte generado con éxito"
+	mensaje.Mensaje = "Reporte DISK generado con éxito"
 }
 
 func reorteSP(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
