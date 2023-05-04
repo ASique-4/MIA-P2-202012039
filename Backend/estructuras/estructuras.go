@@ -265,4 +265,6 @@ type Usuario struct {
 type Mensaje struct {
 	Accion  string `json:"accion"`
 	Mensaje string `json:"mensaje"`
+	Base64  string `json:"base64"`
+	Reporte string `json:"reporte"`
 }

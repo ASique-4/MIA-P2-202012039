@@ -47,10 +47,12 @@ func handleComando(w http.ResponseWriter, r *http.Request) {
 	// Responder con un mensaje de éxito
 	analizador.Analizar(comandoString, &mensaje)
 
-	fmt.Println("Mensaje enviado:", mensaje)
+	fmt.Println("Mensaje enviado: ", mensaje.Accion, mensaje.Mensaje)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(mensaje)
+
+	mensaje = estructuras.Mensaje{}
 
 }
 

@@ -31,7 +31,7 @@ function MostrarReportes(reporte) {
 
   return (
     <div>
-      <div id="reportes"></div>
+      <div id="reportes" style={{margin: "40px"}}></div>
     </div>
   );
 }

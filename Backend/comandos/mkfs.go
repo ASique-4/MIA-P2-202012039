@@ -48,7 +48,7 @@ func crearEXT2(file *os.File, particion estructuras.Particion, particionMontada 
 	// Creamos el superbloque
 	superbloque := estructuras.SuperBloque{}
 	superbloque.S_filesystem_type = [4]byte{0x45, 0x58, 0x54, 0x32}
-	//n = (tamaño_particion - sizeof(superblock)) / (4 + sizeof(inodos) + 3 * sizeof(block))                                             // EXT2 en ASCII
+	//n = (tamaño_particion - sizeof(superblock)) / (4 + sizeof(inodos) + 3 * sizeof(block))
 	inodes_count := math.Floor((float64(bytesToInt(particion.Part_size)) - float64(unsafe.Sizeof(estructuras.SuperBloque{}))) / (4 + float64(unsafe.Sizeof(estructuras.Inodo{})) + 3*float64(unsafe.Sizeof(estructuras.BloqueArchivo{}))))
 
 	superbloque.S_inodes_count = [16]byte{byte(inodes_count)}

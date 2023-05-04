@@ -4,10 +4,7 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -15,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 )
 
 type Rep struct {
@@ -199,31 +197,10 @@ func ReporteDisk(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje 
 		fmt.Println("No se reconoce la extensión")
 		mensaje.Mensaje = "No se reconoce la extensión"
 	}
-	bas64Json.Base64 = imageToBase64(rep.Path)
-	bas64Json.Reporte = "DISK"
-
-	http.HandleFunc("/base64", handleBase64)
-	go func() {
-		log.Fatal(http.ListenAndServe(":3030", nil))
-	}()
+	mensaje.Base64 = imageToBase64(rep.Path)
+	mensaje.Reporte = "DISK"
 
 	mensaje.Mensaje = "Reporte DISK generado con éxito"
-}
-
-type Base64Json struct {
-	Reporte string `json:"reporte"`
-	Base64  string `json:"base64"`
-}
-
-var bas64Json Base64Json
-
-func handleBase64(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-
-	json.NewEncoder(w).Encode(bas64Json)
 }
 
 func imageToBase64(path string) string {
@@ -250,7 +227,7 @@ func imageToBase64(path string) string {
 	return encodedString
 }
 
-func reorteSP(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
+func ReporteSB(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	// Abrimos el archivo
 	filePart, err := os.Open(lista.ObtenerParticionMontada(rep.Id).Path)
 	if err != nil {
@@ -260,9 +237,26 @@ func reorteSP(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *es
 	}
 	defer filePart.Close()
 
-	// Leemos el superbloque
-	var sb estructuras.SuperBloque
+	// Leemos el mbr
+	mbr := estructuras.MBR{}
 	filePart.Seek(0, 0)
+	binary.Read(filePart, binary.BigEndian, &mbr)
+
+	// Buscamos la partición
+	var particion estructuras.Particion
+	particiones := [4]estructuras.Particion{mbr.Mbr_partition_1, mbr.Mbr_partition_2, mbr.Mbr_partition_3, mbr.Mbr_partition_4}
+	for i := 0; i < 4; i++ {
+		if particiones[i].Part_name == lista.ObtenerParticionMontada(rep.Id).Name {
+			particion = particiones[i]
+			break
+		}
+	}
+
+	// Nos posicionamos en el inicio de la partición
+	filePart.Seek(int64(bytesToInt(particion.Part_start)), 0)
+
+	// Leemos el superbloque
+	sb := estructuras.SuperBloque{}
 	binary.Read(filePart, binary.BigEndian, &sb)
 
 	// Nombre del archivo
@@ -299,7 +293,7 @@ func reorteSP(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *es
 	fileDot.WriteString("shape=plaintext\n")
 	fileDot.WriteString("label=<\n")
 	fileDot.WriteString("<table border=\"1\" cellborder=\"1\">\n")
-	fileDot.WriteString("<tr><td bgcolor='#EA5455'>SUPERBLOQUE</td>\n")
+	fileDot.WriteString("<tr><td bgcolor='#EA5455'>SUPERBLOQUE</td></tr>\n")
 
 	// Escribimos el superbloque
 	fileDot.WriteString("<tr><td bgcolor='#E4DCCF'>sb_nombre: " + nombreDelArchivo + "</td></tr>\n")
@@ -309,8 +303,227 @@ func reorteSP(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *es
 	fileDot.WriteString("<tr><td bgcolor='#E4DCCF'>sb_blocks_free: " + intToString(byte16ToInt(sb.S_free_blocks_count)) + "</td></tr>\n")
 	fileDot.WriteString("<tr><td bgcolor='#F9F5EB'>sb_date_creacion: " + time.Unix(int64(binary.LittleEndian.Uint32(sb.S_mtime[:])), 0).String() + "</td></tr>\n")
 	fileDot.WriteString("<tr><td bgcolor='#E4DCCF'>sb_mount_count: " + intToString(bytesToInt(sb.S_mnt_count)) + "</td></tr>\n")
-	fileDot.WriteString("<tr><td bgcolor='#F9F5EB'>sb_magic_num: " + intToString(byte16ToInt(sb.S_magic)) + "</td></tr>\n")
+	fileDot.WriteString("<tr><td bgcolor='#F9F5EB'>sb_magic_num: 0xEF53</td></tr>\n")
 
+	fileDot.WriteString("</table>\n")
+	fileDot.WriteString(">];\n")
+	fileDot.WriteString("}\n")
+
+	// Generamos el reporte
+	// Obtenemos la extensión
+	extension := strings.Split(rep.Path, ".")[1]
+
+	if extension == "png" {
+		// Generamos el png
+		cmd := exec.Command("dot", "-Tpng", dot, "-o", rep.Path)
+		cmd.Run()
+	} else if extension == "pdf" {
+		// Generamos el pdf
+		cmd := exec.Command("dot", "-Tpdf", dot, "-o", rep.Path)
+		cmd.Run()
+	} else if extension == "jpg" {
+		// Generamos el jpg
+		cmd := exec.Command("dot", "-Tjpg", dot, "-o", rep.Path)
+		fmt.Println(cmd)
+		cmd.Run()
+		err := cmd.Run()
+		fmt.Println(err)
+	} else {
+		fmt.Println("No se reconoce la extensión")
+		mensaje.Mensaje = "No se reconoce la extensión"
+	}
+	mensaje.Base64 = imageToBase64(rep.Path)
+	mensaje.Reporte = "SB"
+
+	mensaje.Mensaje = "Reporte SB generado con éxito"
+
+}
+
+func ReporteTREE(rep *Rep, lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
+
+	// Nombre del archivo
+	nombreDelArchivo := strings.Split(lista.ObtenerParticionMontada(rep.Id).Path, "/")[len(strings.Split(lista.ObtenerParticionMontada(rep.Id).Path, "/"))-1]
+
+	// Directorio
+	directorio := strings.Split(rep.Path, "/")[0]
+	for i := 1; i < len(strings.Split(rep.Path, "/"))-1; i++ {
+		directorio += "/" + strings.Split(rep.Path, "/")[i]
+	}
+
+	// Verificamos si existe el directorio
+	if _, err := os.Stat(directorio); os.IsNotExist(err) {
+		os.MkdirAll(directorio, 0777)
+	}
+	// path con extensión .dot
+	dot := strings.Split(rep.Path, ".")[0] + ".dot"
+	// Creamos el archivo
+	fileDot, err := os.Create(dot)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Error al crear el archivo")
+		mensaje.Mensaje = "Error al crear el archivo"
+		return
+	}
+	defer fileDot.Close()
+
+	// Leemos el MBR
+	fileMBR, err := os.OpenFile(lista.ObtenerParticionMontada(rep.Id).Path, os.O_RDWR, 0666)
+	if err != nil {
+		fmt.Println(err)
+		fileMBR.Close()
+		return
+	}
+
+	// Leemos el superbloque
+	// Nos movemos al inicio del archivo
+	_, err = fileMBR.Seek(0, 0)
+	if err != nil {
+		fmt.Println(err)
+		fileMBR.Close()
+		return
+	}
+
+	// Leemos el MBR
+	mbr := estructuras.MBR{}
+	binary.Read(fileMBR, binary.BigEndian, &mbr)
+
+	// Buscamos la partición
+	var particion estructuras.Particion
+	particiones := [4]estructuras.Particion{mbr.Mbr_partition_1, mbr.Mbr_partition_2, mbr.Mbr_partition_3, mbr.Mbr_partition_4}
+	for i := 0; i < 4; i++ {
+		if particiones[i].Part_name == lista.ObtenerParticionMontada(rep.Id).Name {
+			particion = particiones[i]
+			break
+		}
+	}
+
+	// Nos posicionamos en el inicio de la partición
+	fileMBR.Seek(int64(bytesToInt(particion.Part_start)), 0)
+
+	// Leemos el superbloque
+	sb := estructuras.SuperBloque{}
+	binary.Read(fileMBR, binary.BigEndian, &sb)
+
+	// Leemos el conenido del archivo
+	fileMBR.Seek(int64(byte16ToInt(sb.S_block_start))+int64(unsafe.Sizeof(estructuras.BloqueCarpeta{})), 0)
+	contenido := [64]byte{}
+	binary.Read(fileMBR, binary.LittleEndian, &contenido)
+
+	// Escribimos el archivo
+	// Escribimos el disco
+	fileDot.WriteString("digraph G {\n")
+	fileDot.WriteString("label=\"" + nombreDelArchivo + "\";\n")
+	fileDot.WriteString("rankdir=LR;\n")
+	// Nodo raiz
+	fileDot.WriteString("\"node0\"  [label=\"<f0>Inodo 0|<f1>i_type: 0|<f2>Ap0: Bloq0|<f3>Ap1: -1|<f3>Ap3: -1|<f4>AP4: -1|<f5>AP5: -1|<f6>AP6: -1|<f7>AP7: -1|<f8>AP8: -1|<f9>AP9: -1|<f10>AP10: -1|<f11>AP11: -1|<f12>AP12: -1|<f13>AP13: -1|<f14>AP14: -1|<f15>AP15: -1\" shape=\"record\" style=filled fillcolor=\"cadetblue1\"];\n")
+	// Bloques de apuntadores
+	fileDot.WriteString("\"node1\"  [label=\"<f0>Bloque 0|<f1>users.txt: Inodo 1|<f2>.: 0|<f3>..: 0\" shape=\"record\" style=filled fillcolor=\"darkolivegreen1\"];\n")
+	// Inodos
+	fileDot.WriteString("\"node2\"  [label=\"<f0>Inodo 1|<f1>i_type: 1|<f2>Ap0: Bloq1|<f3>Ap1: -1|<f3>Ap3: -1|<f4>AP4: -1|<f5>AP5: -1|<f6>AP6: -1|<f7>AP7: -1|<f8>AP8: -1|<f9>AP9: -1|<f10>AP10: -1|<f11>AP11: -1|<f12>AP12: -1|<f13>AP13: -1|<f14>AP14: -1|<f15>AP15: -1\" shape=\"record\" style=filled fillcolor=\"cadetblue1\"];\n")
+	// Contenido del archivo
+	fileDot.WriteString("\"node3\"  [label=\"<f0>Bloque. Archivo 1|<f1>Contenido: " + obtenerContenido(contenido) + "\" shape=\"record\" style=filled fillcolor=\"darkolivegreen1\"];\n")
+	fileDot.WriteString("subgraph cluster_bm_inodos {\n")
+	fileDot.WriteString("label=\"Bitmap de Inodos\"\n")
+	fileDot.WriteString("bm_inodos [\n")
+	fileDot.WriteString("shape=plaintext\n")
+	fileDot.WriteString("label=<\n")
+	fileDot.WriteString("<table border='1' cellborder='1'>\n")
+	fileDot.WriteString("<tr><td colspan=\"20\" bgcolor='#EA5455'>Reporte de BITMAP DE INODOS</td></tr>\n")
+	fileDot.WriteString(fmt.Sprintf("<tr><td colspan=\"20\" bgcolor='#E4DCCF'>Nombre del Disco: %s</td></tr>\n", nombreDelArchivo))
+	for i := 0; i < byte16ToInt(sb.S_blocks_count)/5; i++ {
+		if i%20 == 0 {
+			fileDot.WriteString("<tr>\n")
+		}
+		if i == 0 {
+			fileDot.WriteString("<td bgcolor='#E4DCCF'>1</td>")
+		} else {
+			fileDot.WriteString("<td bgcolor='#E4DCCF'>0</td>")
+		}
+		if i%20 == 19 {
+			fileDot.WriteString("</tr>\n")
+		}
+	}
+	fileDot.WriteString("</tr>\n")
+	fileDot.WriteString("</table>\n")
+	fileDot.WriteString(">];\n")
+	fileDot.WriteString("}\n")
+
+	fileDot.WriteString("subgraph cluster_bm_bloques {\n")
+	fileDot.WriteString("label=\"Bitmap de Bloques\"\n")
+	fileDot.WriteString("bm_bloques [\n")
+	fileDot.WriteString("shape=plaintext\n")
+	fileDot.WriteString("label=<\n")
+	fileDot.WriteString("<table border='1' cellborder='1'>\n")
+	fileDot.WriteString("<tr><td colspan=\"20\" bgcolor='#EA5455'>Reporte de BITMAP DE BLOQUES</td></tr>\n")
+	fileDot.WriteString(fmt.Sprintf("<tr><td colspan=\"20\" bgcolor='#E4DCCF'>Nombre del Disco: %s</td></tr>\n", nombreDelArchivo))
+	for i := 0; i < byte16ToInt(sb.S_blocks_count)/5; i++ {
+		if i%20 == 0 {
+			fileDot.WriteString("<tr>\n")
+		}
+		if i == 0 {
+			fileDot.WriteString("<td bgcolor='#E4DCCF'>1</td>")
+		} else {
+			fileDot.WriteString("<td bgcolor='#E4DCCF'>0</td>")
+		}
+		if i%20 == 19 {
+			fileDot.WriteString("</tr>\n")
+		}
+	}
+	fileDot.WriteString("</tr>\n")
+	fileDot.WriteString("</table>\n")
+	fileDot.WriteString(">];\n")
+	fileDot.WriteString("}\n")
+
+	fileDot.WriteString("\"node0\":f2 -> \"node1\":f0;\n")
+	fileDot.WriteString("\"node1\":f1 -> \"node2\":f0;\n")
+	fileDot.WriteString("\"node2\":f1 -> \"node3\":f0;\n")
+	fileDot.WriteString("\"bm_bloques\" -> \"bm_inodos\";\n")
+
+	fileDot.WriteString("}")
+
+	// Cerramos el archivo
+	fileDot.Close()
+
+	// Generamos el reporte
+	// Obtenemos la extensión
+	extension := strings.Split(rep.Path, ".")[1]
+
+	if extension == "png" {
+		// Generamos el png
+		cmd := exec.Command("dot", "-Tpng", dot, "-o", rep.Path)
+		cmd.Run()
+	} else if extension == "pdf" {
+		// Generamos el pdf
+		cmd := exec.Command("dot", "-Tpdf", dot, "-o", rep.Path)
+		cmd.Run()
+	} else if extension == "jpg" {
+		// Generamos el jpg
+		cmd := exec.Command("dot", "-Tjpg", dot, "-o", rep.Path)
+		fmt.Println(cmd)
+		cmd.Run()
+		err := cmd.Run()
+		fmt.Println(err)
+	} else {
+		fmt.Println("No se reconoce la extensión")
+		mensaje.Mensaje = "No se reconoce la extensión"
+	}
+
+	mensaje.Base64 = imageToBase64(rep.Path)
+	mensaje.Reporte = "TREE"
+
+	mensaje.Mensaje = "Reporte TREE generado con éxito"
+
+}
+
+func obtenerContenido(contenido [64]byte) string {
+	var cadena string
+	for i := 0; i < len(contenido); i++ {
+		if contenido[i] == 0 {
+			break
+		}
+		cadena = cadena + string(contenido[i])
+	}
+	return cadena
 }
 
 // int to string
@@ -326,9 +539,19 @@ func floatToString(input_num float64) string {
 func (rep *Rep) Rep(lista *estructuras.ListaParticionesMontadas, mensaje *estructuras.Mensaje) {
 	switch strings.ToLower(rep.Name) {
 	case "disk":
+		fmt.Println("Generando reporte DISK")
 		ReporteDisk(rep, lista, mensaje)
+	case "sb":
+		fmt.Println("Generando reporte SB")
+		ReporteSB(rep, lista, mensaje)
+	case "tree":
+		fmt.Println("Generando reporte TREE")
+		ReporteTREE(rep, lista, mensaje)
 	default:
 		fmt.Println("No se reconoce el reporte")
 		mensaje.Mensaje = "No se reconoce el reporte"
 	}
+
+	time.Sleep(3 * time.Second)
+
 }

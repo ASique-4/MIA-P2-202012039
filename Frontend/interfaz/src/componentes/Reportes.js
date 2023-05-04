@@ -31,7 +31,7 @@ function Reportes() {
             <button className="Procesar" onClick={e => MostrarReportes('SB')}>SB</button>
           </div>
         </div>
-        <div id="reportes">
+        <div id="reportes" style={{margin: "40px"}}>
 
         </div>
       </center>

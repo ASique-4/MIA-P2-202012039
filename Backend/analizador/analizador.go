@@ -377,16 +377,30 @@ func analizarLogin(parametros string, w *estructuras.Mensaje) {
 
 }
 
-func analizarLogout() {
+func analizarLogout(mensaje *estructuras.Mensaje) {
 	if usuarioActual == (nil) {
 		fmt.Println("¡Error! No hay ningún usuario logueado")
+		mensaje.Mensaje = "¡Error! No hay ningún usuario logueado"
 		return
 	}
 	usuarioActual = new(estructuras.Usuario)
 	fmt.Println("Se ha cerrado la sesión correctamente")
+	mensaje.Mensaje = "Se ha cerrado la sesión correctamente"
 }
 
 func analizarMkgrp(parametros string, w *estructuras.Mensaje) {
+	// Si no hay sesion iniciada
+	if usuarioActual == (nil) {
+		fmt.Println("¡Error! No hay ningún usuario logueado")
+		w.Mensaje = "¡Error! No hay ningún usuario logueado"
+		return
+	}
+	// Si no es usuario root
+	if usuarioActual.Username != "root" {
+		fmt.Println("¡Error! Solo el usuario root puede crear grupos")
+		w.Mensaje = "¡Error! Solo el usuario root puede crear grupos"
+		return
+	}
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Mkgrp
 	for parametros != "" {
@@ -419,6 +433,18 @@ func analizarMkgrp(parametros string, w *estructuras.Mensaje) {
 }
 
 func analizarRmgrp(parametros string, w *estructuras.Mensaje) {
+	// Si no hay sesion iniciada
+	if usuarioActual == (nil) {
+		fmt.Println("¡Error! No hay ningún usuario logueado")
+		w.Mensaje = "¡Error! No hay ningún usuario logueado"
+		return
+	}
+	// Si no es usuario root
+	if usuarioActual.Username != "root" {
+		fmt.Println("¡Error! Solo el usuario root puede crear grupos")
+		w.Mensaje = "¡Error! Solo el usuario root puede crear grupos"
+		return
+	}
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Rmgrp
 	for parametros != "" {
@@ -450,6 +476,18 @@ func analizarRmgrp(parametros string, w *estructuras.Mensaje) {
 }
 
 func analizarMkuser(parametros string, w *estructuras.Mensaje) {
+	// Si no hay sesion iniciada
+	if usuarioActual == (nil) {
+		fmt.Println("¡Error! No hay ningún usuario logueado")
+		w.Mensaje = "¡Error! No hay ningún usuario logueado"
+		return
+	}
+	// Si no es usuario root
+	if usuarioActual.Username != "root" {
+		fmt.Println("¡Error! Solo el usuario root puede crear grupos")
+		w.Mensaje = "¡Error! Solo el usuario root puede crear grupos"
+		return
+	}
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Mkuser
 	for parametros != "" {
@@ -485,6 +523,18 @@ func analizarMkuser(parametros string, w *estructuras.Mensaje) {
 }
 
 func analizarRmusr(parametros string, w *estructuras.Mensaje) {
+	// Si no hay sesion iniciada
+	if usuarioActual == (nil) {
+		fmt.Println("¡Error! No hay ningún usuario logueado")
+		w.Mensaje = "¡Error! No hay ningún usuario logueado"
+		return
+	}
+	// Si no es usuario root
+	if usuarioActual.Username != "root" {
+		fmt.Println("¡Error! Solo el usuario root puede crear grupos")
+		w.Mensaje = "¡Error! Solo el usuario root puede crear grupos"
+		return
+	}
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var comando comandos.Rmusr
 	for parametros != "" {
@@ -560,7 +610,7 @@ func Analizar(comando string, mensaje *estructuras.Mensaje) {
 	} else if token == "logout" {
 		fmt.Println("Cerrando sesión...")
 		mensaje.Accion = "Cerrando sesión..."
-		analizarLogout()
+		analizarLogout(mensaje)
 	} else if token == "mkgrp" {
 		fmt.Println("Creando grupo...")
 		mensaje.Accion = "Creando grupo..."
