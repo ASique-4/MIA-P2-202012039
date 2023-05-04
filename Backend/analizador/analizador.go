@@ -113,7 +113,8 @@ func analizarMkdisk(parametros string, w *estructuras.Mensaje) {
 				fmt.Printf("¡Error! El valor de fit debe ser un único carácter: %v\n", valor)
 				return
 			}
-			binary.LittleEndian.PutUint32(disco.Fit[:], uint32(valor[0]))
+
+			disco.Fit[0] = valor[0]
 		default:
 			fmt.Printf("¡Error! mkdisk solo acepta parámetros válidos, ¿qué intentas hacer con '%v'?\n", valor)
 			return
@@ -160,7 +161,7 @@ func analizarFdisk(parametros string, w *estructuras.Mensaje) {
 			}
 			particion.Unit = valor[0]
 		case "fit":
-			if len(valor) != 1 {
+			if len(valor) != 2 {
 				fmt.Printf("¡Error! El valor de fit debe ser un único carácter: %v\n", valor)
 				return
 			}

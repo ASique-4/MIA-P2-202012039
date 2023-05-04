@@ -605,7 +605,7 @@ func CrearParticion(particion Fdisk, mensaje *estructuras.Mensaje) {
 
 	//Si el path tiene comillas, las quitamos
 	if particion.Path[0] == '"' {
-		particion.Path = particion.Path[1 : len(particion.Path)-1]
+		particion.Path = particion.Path[1 : len(particion.Path)-2]
 	}
 
 	//Verificamos si el path existe

@@ -22,7 +22,8 @@ func LeerEntrada() string {
 }
 
 type Comando struct {
-	Comando string `json:"comando"`
+	Comando   string `json:"comando"`
+	Confirmar bool   `json:"confirmar"`
 }
 
 var mensaje estructuras.Mensaje

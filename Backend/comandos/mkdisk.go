@@ -42,7 +42,7 @@ func CrearDiscos(disco Mkdisk, mensaje *estructuras.Mensaje) {
 	mensaje.Accion = "Creando disco..."
 	// Verificamos si tiene comillas dobles
 	if disco.Path[0] == '"' {
-		disco.Path = disco.Path[1 : len(disco.Path)-1]
+		disco.Path = disco.Path[1 : len(disco.Path)-2]
 	}
 	//Guardamos el nombre del disco
 	nombre := disco.Path[strings.LastIndex(disco.Path, "/")+1:]

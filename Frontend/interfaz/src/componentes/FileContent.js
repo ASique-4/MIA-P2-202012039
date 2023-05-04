@@ -5,6 +5,7 @@ function FileContent() {
   const [fileContent, setFileContent] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [popupTitle, setPopupTitle] = useState("");
+  const [confirmar, setConfirmar] = useState(false);
 
   const handleOpenPopup = () => {
     setShowPopup(true);
@@ -12,12 +13,12 @@ function FileContent() {
 
   const handleAccept = () => {
     console.log("Popup accepted");
-    handleConfirm(true);
+    setConfirmar(true);
   };
 
   const handleReject = () => {
     console.log("Popup rejected");
-    handleConfirm(false);
+    setConfirmar(false);
   };
 
   const handleFileRead = (e) => {
@@ -40,27 +41,6 @@ function FileContent() {
    * función usa este valor para crear un objeto de datos de solicitud que se envía a un servidor usando
    * la API `fetch`
    */
-  const handleConfirm = (respuesta) => {
-    const requestData = {
-      Aceptar: respuesta,
-    };
-
-    const options = {
-      method: "POST",
-      body: JSON.stringify(requestData), // Convertir a cadena JSON
-    };
-
-    setPopupTitle("¿Está seguro de que desea eliminar el disco?");
-
-    const salida = document.getElementById("salida");
-    fetch("http://localhost:3030/confirmar", options)
-      .then((response) => response.json())
-      .then((response) => {
-        console.log(response);
-        salida.innerText += "=======> " + response.accion + " <=======\n";
-        salida.innerText += response.mensaje + "\n";
-      });
-  };
 
   const imprimirConsola = (accion, mensaje) => {
     const salida = document.getElementById("salida");
@@ -92,6 +72,18 @@ function FileContent() {
           return;
         }
 
+        // Si es eliminar disco
+        if (linea.startsWith("rmdisk")) {
+          setPopupTitle("¿Está seguro de que desea eliminar el disco?");
+          showPopup(true);
+          handleOpenPopup();
+          showPopup(false);
+          if (!confirmar) {
+            salida.innerText += "=======> Eliminación de disco cancelada <=======\n";
+            return;
+          }
+        }
+
         const requestData = {
           comando: linea,
         };
@@ -102,7 +94,7 @@ function FileContent() {
           body: JSON.stringify(requestData), // Convertir a cadena JSON
         };
 
-        fetch("http://18.234.161.182/ejecutar-comando", options)
+        fetch("http://localhost:8080/ejecutar-comando", options)
           .then((response) => response.json())
           .then((response) => {
             console.log(response);
