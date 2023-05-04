@@ -5,20 +5,76 @@ function FileContent() {
   const [fileContent, setFileContent] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [popupTitle, setPopupTitle] = useState("");
-  const [confirmar, setConfirmar] = useState(false);
+  const [requestData] = useState({ confirmar: false, comando: "" });
 
   const handleOpenPopup = () => {
     setShowPopup(true);
   };
 
+  const handleClosePopup = (booleano) => {
+    setShowPopup(false);
+    requestData.confirmar = booleano;
+    console.log(requestData.confirmar);
+    const confirmarData = {
+      Aceptar: requestData.confirmar,
+    };
+    // Esperar a que el usuario responda
+    setTimeout(() => {
+      const options = {
+        method: "POST",
+        body: JSON.stringify(confirmarData), // Convertir a cadena JSON
+      };
+
+      fetch("http://localhost:8080/confirmar", options)
+        .then((response) => response.json())
+        .then((response) => {
+          console.log(response);
+          console.log(requestData.confirmar);
+          console.log(confirmarData.Aceptar);
+        })
+        .catch((err) => console.error(err));
+    }, 10000);
+
+    console.log(requestData);
+
+    const options = {
+      method: "POST",
+      body: JSON.stringify(requestData), // Convertir a cadena JSON
+    };
+
+    fetch("http://localhost:8080/ejecutar-comando", options)
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        console.log("prueba");
+        if (response.accion === "pause") {
+          setPopupTitle("Ejecución en pausada");
+          handleOpenPopup();
+        } else if (response.accion === "Creando reporte...") {
+          localStorage.setItem("base" + response.reporte, response.base64);
+          imprimirConsola(response.accion, response.mensaje);
+        } else if (
+          response.mensaje === "Se ha cerrado la sesión correctamente"
+        ) {
+          imprimirConsola(response.accion, response.mensaje);
+          localStorage.setItem("user", "");
+        } else {
+          imprimirConsola(response.accion, response.mensaje);
+        }
+      })
+      .catch((err) => console.error(err));
+  };
+
   const handleAccept = () => {
-    console.log("Popup accepted");
-    setConfirmar(true);
+    requestData.confirmar = true;
+    console.log(requestData.confirmar);
+    handleClosePopup(true);
   };
 
   const handleReject = () => {
-    console.log("Popup rejected");
-    setConfirmar(false);
+    requestData.confirmar = false;
+    console.log(requestData.confirmar);
+    handleClosePopup(false);
   };
 
   const handleFileRead = (e) => {
@@ -67,6 +123,10 @@ function FileContent() {
           return;
         }
 
+        requestData.comando = linea;
+        requestData.confirmar = false;
+
+        console.log(requestData);
         // Si es una linea vacia
         if (linea === "") {
           return;
@@ -74,19 +134,14 @@ function FileContent() {
 
         // Si es eliminar disco
         if (linea.startsWith("rmdisk")) {
+          // Detener la ejecución del for each
           setPopupTitle("¿Está seguro de que desea eliminar el disco?");
-          showPopup(true);
+
           handleOpenPopup();
-          showPopup(false);
-          if (!confirmar) {
-            salida.innerText += "=======> Eliminación de disco cancelada <=======\n";
-            return;
-          }
+          console.log(requestData.confirmar);
+          return;
         }
 
-        const requestData = {
-          comando: linea,
-        };
         console.log(requestData);
 
         const options = {
@@ -102,13 +157,12 @@ function FileContent() {
             if (response.accion === "pause") {
               setPopupTitle("Ejecución en pausada");
               handleOpenPopup();
-            } else if (response.accion === "Eliminando disco...") {
-              setPopupTitle("¿Está seguro de que desea eliminar el disco?");
-              handleOpenPopup();
             } else if (response.accion === "Creando reporte...") {
               localStorage.setItem("base" + response.reporte, response.base64);
               imprimirConsola(response.accion, response.mensaje);
-            } else if (response.mensaje === "Se ha cerrado la sesión correctamente") {
+            } else if (
+              response.mensaje === "Se ha cerrado la sesión correctamente"
+            ) {
               imprimirConsola(response.accion, response.mensaje);
               localStorage.setItem("user", "");
             } else {
@@ -116,7 +170,7 @@ function FileContent() {
             }
           })
           .catch((err) => console.error(err));
-      }, index * 2000); // Retraso de 2 segundos (2000 ms) entre cada iteración
+      }, index * 4000); // Retraso de 2 segundos (2000 ms) entre cada iteración
     });
   };
 

@@ -60,7 +60,7 @@ func estaVaciaName(b [16]byte) bool {
 }
 
 // Función para analizar los parámetros del comando rmdisk
-func analizarRmdisk(parametros string, w *estructuras.Mensaje) {
+func analizarRmdisk(parametros string, w *estructuras.Mensaje, confirmar bool) {
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var disco comandos.Rmdisk
 	for parametros != "" {
@@ -81,7 +81,7 @@ func analizarRmdisk(parametros string, w *estructuras.Mensaje) {
 			parametros = ""
 		}
 	}
-	comandos.EliminarDiscos(disco, w)
+	comandos.EliminarDiscos(disco, w, confirmar)
 }
 
 // Función para analizar los parámetros del comando mkdisk
@@ -138,6 +138,7 @@ func analizarMkdisk(parametros string, w *estructuras.Mensaje) {
 
 // Función para analizar los parámetros del comando fdisk
 func analizarFdisk(parametros string, w *estructuras.Mensaje) {
+
 	parametros = strings.TrimSpace(strings.SplitN(parametros, ">", 2)[1])
 	var particion comandos.Fdisk
 	for parametros != "" {
@@ -566,7 +567,13 @@ func analizarRmusr(parametros string, w *estructuras.Mensaje) {
 	comando.Rmusr(usuarioActual.PartID, &particionesMontadas, w)
 }
 
-func Analizar(comando string, mensaje *estructuras.Mensaje) {
+func Analizar(comando string, mensaje *estructuras.Mensaje, confirmar bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Ocurrió un error:", r)
+			mensaje.Mensaje = "Ocurrió un error: " + fmt.Sprint(r)
+		}
+	}()
 	//Si es pause
 	if comando == "pause" {
 		fmt.Println("Pausado...")
@@ -587,7 +594,7 @@ func Analizar(comando string, mensaje *estructuras.Mensaje) {
 	} else if token == "rmdisk" {
 		fmt.Println("Eliminando disco...")
 		mensaje.Accion = "Eliminando disco..."
-		analizarRmdisk(parametros, mensaje)
+		analizarRmdisk(parametros, mensaje, confirmar)
 	} else if token == "fdisk" {
 		fmt.Println("Creando partición...")
 		mensaje.Accion = "Creando partición..."

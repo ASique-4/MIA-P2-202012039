@@ -26,7 +26,31 @@ type Comando struct {
 	Confirmar bool   `json:"confirmar"`
 }
 
+type Confirmar struct {
+	Aceptar bool `json:"aceptar"`
+}
+
 var mensaje estructuras.Mensaje
+var confirmar bool
+
+func handleConfirmar(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+
+	// Guardamos el json en una estructura
+	var confirmarStruct Confirmar
+	err := json.NewDecoder(r.Body).Decode(&confirmarStruct)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Guardamos el valor de confirmar
+	confirmar = confirmarStruct.Aceptar
+	fmt.Println("Confirmar endpoint: ", confirmar)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(confirmar)
+}
 
 func handleComando(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
@@ -40,13 +64,15 @@ func handleComando(w http.ResponseWriter, r *http.Request) {
 
 	// Guardar el comando en una cadena
 	comandoString := c.Comando
+	c.Confirmar = confirmar
+	fmt.Println("Confirmar: ", c.Confirmar)
 
 	// Realizar cualquier otra operación con el comando
 
 	fmt.Println("Comando recibido:", comandoString)
 	time.Sleep(5 * time.Second)
 	// Responder con un mensaje de éxito
-	analizador.Analizar(comandoString, &mensaje)
+	analizador.Analizar(comandoString, &mensaje, c.Confirmar)
 
 	fmt.Println("Mensaje enviado: ", mensaje.Accion, mensaje.Mensaje)
 
@@ -71,7 +97,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	// Realizar el login
 	comando := "login >user=" + usuario.Username + " >pwd=" + usuario.Password + " >id=" + usuario.Id
 
-	analizador.Analizar(comando, &mensaje)
+	analizador.Analizar(comando, &mensaje, false)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(mensaje)
@@ -100,6 +126,7 @@ func main() {
 	// y devuelva el resultado del analisis
 	http.HandleFunc("/ejecutar-comando", handleComando)
 	http.HandleFunc("/login", handleLogin)
+	http.HandleFunc("/confirmar", handleConfirmar)
 
 	go func() {
 		if err := http.ListenAndServe(":8080", nil); err != nil {
