@@ -40,6 +40,10 @@ func llenarArchivoConCeros(archivo *os.File, tamanio int64) error {
 // Función para crear un disco
 func CrearDiscos(disco Mkdisk, mensaje *estructuras.Mensaje) {
 	mensaje.Accion = "Creando disco..."
+	// Verificamos si tiene comillas dobles
+	if disco.Path[0] == '"' {
+		disco.Path = disco.Path[1 : len(disco.Path)-1]
+	}
 	//Guardamos el nombre del disco
 	nombre := disco.Path[strings.LastIndex(disco.Path, "/")+1:]
 	// Verificamos si el path existe y si no lo creamos

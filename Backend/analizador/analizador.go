@@ -109,7 +109,7 @@ func analizarMkdisk(parametros string, w *estructuras.Mensaje) {
 			}
 			disco.Unit = valor[0]
 		case "fit":
-			if len(valor) != 1 {
+			if len(valor) != 2 {
 				fmt.Printf("¡Error! El valor de fit debe ser un único carácter: %v\n", valor)
 				return
 			}

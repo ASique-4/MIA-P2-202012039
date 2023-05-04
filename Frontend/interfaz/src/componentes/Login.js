@@ -19,7 +19,7 @@ const Login = () => {
       body: JSON.stringify(requestData), // Convertir a cadena JSON
     };
 
-    fetch("http://localhost:8080/login", options)
+    fetch("http://18.234.161.182/login", options)
       .then((response) => response.json())
       .then((response) => {
         if (response.mensaje === "Login correcto") {
