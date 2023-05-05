@@ -582,6 +582,14 @@ func Analizar(comando string, mensaje *estructuras.Mensaje, confirmar bool) {
 		return
 	}
 
+	//Logout
+	if comando == "logout" {
+		fmt.Println("Cerrando sesión...")
+		mensaje.Accion = "Cerrando sesión..."
+		analizarLogout(mensaje)
+		return
+	}
+
 	// Lógica de análisis del comando aquí
 	token := strings.TrimSpace(strings.SplitN(comando, " ", 2)[0])
 	parametros := strings.TrimSpace(strings.SplitN(comando, " ", 2)[1])

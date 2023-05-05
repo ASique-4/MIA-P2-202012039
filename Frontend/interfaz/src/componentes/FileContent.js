@@ -25,7 +25,7 @@ function FileContent() {
         body: JSON.stringify(confirmarData), // Convertir a cadena JSON
       };
 
-      fetch("http://localhost:8080/confirmar", options)
+      fetch("http://18.234.161.182/confirmar", options)
         .then((response) => response.json())
         .then((response) => {
           console.log(response);
@@ -42,7 +42,7 @@ function FileContent() {
       body: JSON.stringify(requestData), // Convertir a cadena JSON
     };
 
-    fetch("http://localhost:8080/ejecutar-comando", options)
+    fetch("http://18.234.161.182/ejecutar-comando", options)
       .then((response) => response.json())
       .then((response) => {
         console.log(response);
@@ -149,7 +149,7 @@ function FileContent() {
           body: JSON.stringify(requestData), // Convertir a cadena JSON
         };
 
-        fetch("http://localhost:8080/ejecutar-comando", options)
+        fetch("http://18.234.161.182/ejecutar-comando", options)
           .then((response) => response.json())
           .then((response) => {
             console.log(response);

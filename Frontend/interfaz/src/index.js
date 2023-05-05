@@ -14,6 +14,7 @@ export default function Index() {
   // Obtener el usuario del local storage
   const user = localStorage.getItem('user');
   console.log(user);
+  
 
   return (
     <BrowserRouter>

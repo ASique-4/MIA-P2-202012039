@@ -1,7 +1,7 @@
-import React from 'react';
+import React from "react";
 
 function MostrarReportes(reporte) {
-  const reporteDiv = document.getElementById('reportes');
+  const reporteDiv = document.getElementById("reportes");
 
   const mostrar = (base, reporteName) => {
     const imageUrl = `data:image/jpeg;base64,${base}`;
@@ -13,25 +13,27 @@ function MostrarReportes(reporte) {
         <img src="${imageUrl}" alt="${reporteName}">
       </div>
     `;
-  }
-  
+  };
 
-  if (reporte === 'DISK') {
-    mostrar(localStorage.getItem('baseDISK'), 'DISK');
-  } else if (reporte === 'TREE') {
-    mostrar(localStorage.getItem('baseTREE'), 'TREE');
-  } else if (reporte === 'FILE') {
-    mostrar(localStorage.getItem('baseFILE'), 'FILE');
-  } else if (reporte === 'SB') {
-    mostrar(localStorage.getItem('baseSB'), 'SB');
+  if (localStorage.getItem("user") !== "root") {
+    reporteDiv.innerHTML = "No tiene permisos para ver los reportes";
   } else {
-    console.log(reporte);
-    reporteDiv.innerHTML = 'Archivo no compatible';
+    if (reporte === "DISK") {
+      mostrar(localStorage.getItem("baseDISK"), "DISK");
+    } else if (reporte === "TREE") {
+      mostrar(localStorage.getItem("baseTREE"), "TREE");
+    } else if (reporte === "FILE") {
+      mostrar(localStorage.getItem("baseFILE"), "FILE");
+    } else if (reporte === "SB") {
+      mostrar(localStorage.getItem("baseSB"), "SB");
+    } else {
+      console.log(reporte);
+      reporteDiv.innerHTML = "Archivo no compatible";
+    }
   }
-
   return (
     <div>
-      <div id="reportes" style={{margin: "40px"}}></div>
+      <div id="reportes" style={{ margin: "40px" }}></div>
     </div>
   );
 }
